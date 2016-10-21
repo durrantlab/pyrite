@@ -1,0 +1,3 @@
+# List files you don't want to sync here, so git knows which files to
+       ignore. When you're done, type ":wq" and press enter.
+*.pyc
