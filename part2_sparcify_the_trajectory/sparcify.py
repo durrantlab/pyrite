@@ -37,4 +37,5 @@ for line in open(sim_pdb_filename):
 
 # Ok, so pdb_frames is a list of pymolecule objects, each one corresponding to a frame.
 
-# More to come later, when you reach this part of the project...
+for i, frame in enumerate(pdb_frames):
+    	frame.save_pdb("frame" + str(i) + ".pdb", False, False, False)
