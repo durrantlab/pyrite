@@ -38,3 +38,16 @@ for line in open(sim_pdb_filename):
 # Ok, so pdb_frames is a list of pymolecule objects, each one corresponding to a frame.
 
 # More to come later, when you reach this part of the project...
+
+
+
+# This is how you can access a pymolecule object:
+mol = pymolecule.Molecule()
+coors = mol.get_coordinates()
+# mess with coors
+# Check out numpy slice
+mol.set_coordinates(coors)
+
+inf = mol.get_atom_information()
+# mess with inf
+mol.set_atom_information(inf)
