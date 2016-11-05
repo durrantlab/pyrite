@@ -1,3 +1,5 @@
+from pymolecule import dumbpy as numpy
+
 class Quaternion:
     """A class supporting quaternion arithmetic"""
 

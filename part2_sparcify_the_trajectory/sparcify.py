@@ -3,8 +3,8 @@ import pymolecule
 import numpy
 
 # Here are some variables that eventually will be user specified.
-sim_pdb_filename = "sim_to_test.pdb"
-frame_stride = 2  # Only look at every other frame.
+sim_pdb_filename = "M2_traj.pdb"
+frame_stride = 5  # Only look at every other frame.
 atom_stride = 5  # Only save every 5th atom.
 
 # Use pymolecule to load in the pdb trajectory frames

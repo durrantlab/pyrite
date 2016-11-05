@@ -1,5 +1,4 @@
-import numpy
-from numpy.lib.recfunctions import append_fields
+from pymolecule import dumbpy as numpy
 import os
 import cPickle as pickle
 import shutil
@@ -25,16 +24,6 @@ class FileIO():
 
             Args:
                 filename -- A string, the filename of the pym file.
-
-            >>> import Molecule as molecule
-            >>> import os
-            >>> m = molecule.Molecule()
-            >>> m.load_pym_into("./sample_structures/single_line.pym")
-            >>> inf = m.get_atom_information()
-            >>> coor = m.get_coordinates()
-            >>> print str(zip(list(inf["name_stripped"]), list(coor[:, 1].astype("S3"))))
-            [('N', '0.0'), ('C', '1.0')]
-
         """
 
         if filename[-1:] != os.sep: filename = filename + os.sep
@@ -58,6 +47,9 @@ class FileIO():
 
         if os.path.exists(filename + 'filename'):
             prnt.set_filename(pickle.load(open(filename + 'filename', "rb")))
+        
+        if prnt.get_filename() == "":  # If still no filename, set it to the one used as a parameter.
+            prnt.set_filename(filename)
 
         if os.path.exists(filename + "bonds.npz"):
             prnt.set_bonds(numpy.load(filename + "bonds.npz")['arr_0'])
@@ -66,7 +58,7 @@ class FileIO():
             prnt.set_coordinates_undo_point(
                 numpy.load(filename + "coordinates_undo_point.npz")['arr_0']
             )
-
+        
     def load_pdbqt_into(self, filename, bonds_by_distance = False,
                       serial_reindex = True, resseq_reindex = False):
         """Loads the molecular data contained in a pdbqt file into the current
@@ -83,16 +75,6 @@ class FileIO():
                     reindex the pdb serial field. True by default.
                 resseq_reindex -- An optional boolean, whether or not to
                     reindex the pdbqt resseq field. False by default.
-
-            >>> import Molecule as molecule
-            >>> import os
-            >>> m = molecule.Molecule()
-            >>> m.load_pdbqt_into("./sample_structures/single_line.pdbqt")
-            >>> inf = m.get_atom_information()
-            >>> coor = m.get_coordinates()
-            >>> print str(zip(list(inf["name_stripped"]), list(coor[:, 1].astype("S3"))))
-            [('N', '0.0'), ('C', '1.0')]
-
         """
 
         self.__parent_molecule.set_filename(filename)
@@ -137,9 +119,7 @@ class FileIO():
             atom_inf["element_stripped"], atom_inf["charge"]
         )
 
-        atom_inf["element_stripped"] = numpy.core.defchararray.strip(
-            atom_types
-        )
+        atom_inf["element_stripped"] = numpy.defchararray_strip(atom_types)
 
         atom_inf["charge"] = "\n"
 
@@ -163,15 +143,6 @@ class FileIO():
                     reindex the pdb serial field. True by default.
                 resseq_reindex -- An optional boolean, whether or not to
                     reindex the pdb resseq field. False by default.
-
-            >>> import Molecule as molecule
-            >>> m = molecule.Molecule()
-            >>> m.load_pdb_into("./sample_structures/single_line.pdb", True, True, True)
-            >>> inf = m.get_atom_information()
-            >>> coor = m.get_coordinates()
-            >>> print str(zip(list(inf["name_stripped"]), list(coor[:, 1].astype("S3"))))
-            [('N', '0.0'), ('C', '1.0')]
-
         """
 
         self.__parent_molecule.set_filename(filename)
@@ -201,7 +172,6 @@ class FileIO():
                     reindex the pdb serial field. True by default.
                 resseq_reindex -- An optional boolean, whether or not to
                     reindex the pdb resseq field. False by default.
-
             """
 
         # source_data = numpy.genfromtxt(file_obj,
@@ -252,13 +222,14 @@ class FileIO():
         for field in (self.__parent_molecule.get_constants()['i8_fields'] +
                       self.__parent_molecule.get_constants()['f8_fields']):
             check_fields = atom_inf[field]
-            check_fields = numpy.core.defchararray.strip(check_fields)
+            check_fields = numpy.defchararray_strip(check_fields)
             indices_of_empty = numpy.nonzero(check_fields == '')[0]
             atom_inf[field][indices_of_empty] = '0'
 
         # now actually change the type
         old_types = atom_inf.dtype
         descr = old_types.descr
+
         for field in self.__parent_molecule.get_constants()['i8_fields']:
             index = atom_inf.dtype.names.index(field)
             descr[index] = (descr[index][0], 'i8')
@@ -297,7 +268,7 @@ class FileIO():
         # used to overwrite this and assign elements based on the atom name
         # only.
         indicies_where_element_is_not_defined = numpy.nonzero(
-            numpy.core.defchararray.strip(atom_inf['element']) == ''
+            numpy.defchararray_strip(atom_inf['element']) == ''
         )[0]
 
         self.__parent_molecule.assign_elements_from_atom_names(
@@ -310,10 +281,10 @@ class FileIO():
         fields_to_strip = ['name', 'resname', 'chainid', 'element']
         for f in fields_to_strip:
             self.__parent_molecule.set_atom_information(
-                append_fields(
+                numpy.append_fields(
                     self.__parent_molecule.get_atom_information().copy(),
                     f + '_stripped',
-                    data = numpy.core.defchararray.strip(atom_inf[f])
+                    data = numpy.defchararray_strip(atom_inf[f])
                 )
             )
 
@@ -384,18 +355,6 @@ class FileIO():
                 save_coordinates_undo_point -- An optional boolean, whether or
                     not to save the last coordinate undo point. False by
                     default.
-
-            >>> import Molecule as molecule
-            >>> import os
-            >>> import glob
-            >>> import shutil
-            >>> m = molecule.Molecule()
-            >>> m.load_pdb_into("./sample_structures/single_line.pdb", True, True, True)
-            >>> if os.path.exists("./sample_structures/tmp.pym"): shutil.rmtree("./sample_structures/tmp.pym")
-            >>> m.save_pym("./sample_structures/tmp.pym", True, True, True, True, True)
-            >>> print str(glob.glob("./sample_structures/tmp.pym/*"))  # Weak test.
-            ['./sample_structures/tmp.pym/atom_information', './sample_structures/tmp.pym/bonds.npz', './sample_structures/tmp.pym/coordinates.npz', './sample_structures/tmp.pym/coordinates_undo_point.npz', './sample_structures/tmp.pym/filename', './sample_structures/tmp.pym/hierarchy', './sample_structures/tmp.pym/remarks']
-            >>> shutil.rmtree("./sample_structures/tmp.pym")
         """
 
         # Why not just pickle self.parent.information? Because it's a huge
@@ -484,16 +443,6 @@ class FileIO():
             Returns:
                 If return_text is True, a PDB-formatted string. Otherwise,
                 returns nothing.
-
-            >>> import Molecule as molecule
-            >>> import os
-            >>> m = molecule.Molecule()
-            >>> m.load_pdb_into("./sample_structures/single_line.pdb", True, True, True)
-            >>> m.save_pdb("./sample_structures/tmp.pdb")
-            >>> print open("./sample_structures/tmp.pdb").readline().strip()
-            ATOM      1  N   VAL A   1       0.000   0.000   0.000  1.00  0.00           N
-            >>> os.remove("./sample_structures/tmp.pdb")
-
         """
 
         if len(self.__parent_molecule.get_atom_information()) > 0:

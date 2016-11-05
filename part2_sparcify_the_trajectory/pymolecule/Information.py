@@ -1,4 +1,5 @@
-import numpy
+from pymolecule import dumbpy as numpy
+
 
 class Information():
     """A class for storing and accessing information about the elements of a
@@ -16,13 +17,13 @@ class Information():
         self.__parent_molecule = parent_molecule_object
 
         self.__constants = {}
-        #Removed HG from this list to avoid capturing gamma hydrogens
+        # Removed HG from this list to avoid capturing gamma hydrogens
         self.__constants['element_names_with_two_letters'] = ['BR', 'CL', 'BI',
                                                               'AS', 'AG', 'LI',
                                                               'MG', 'RH', 'ZN',
                                                               'MN']
 
-        #SHORTEN LENGTH OF BOND_LENGTH_DICT
+        # SHORTEN LENGTH OF BOND_LENGTH_DICT
         self.__constants['bond_length_dict'] = {
             'C-C': 1.53, 'N-N': 1.425, 'O-O': 1.469, 'S-S': 2.048,
             'C-H': 1.059, 'H-C': 1.059, 'C-N': 1.469, 'N-C': 1.469,
@@ -242,7 +243,7 @@ class Information():
                 mass = self.__constants['mass_dict'][element]
                 masses[i] = mass
 
-            self.__atom_information = append_fields(self.__atom_information,
+            self.__atom_information = numpy.append_fields(self.__atom_information,
                                                     'mass', data = masses)
 
     def assign_elements_from_atom_names(self, selection = None):
@@ -270,7 +271,7 @@ class Information():
             self.__atom_information['name'][selection]
         )
 
-        fix_element_names = numpy.core.defchararray.strip(fix_element_names)
+        fix_element_names = numpy.defchararray_strip(fix_element_names)
 
         # first remove any numbers at the begining of these names
         fix_element_names = numpy.core.defchararray.lstrip(fix_element_names,
@@ -326,12 +327,12 @@ class Information():
         # element_stripped also needs to be updated try:
         # self.__parent_molecule.information.get_atom_information()
         # ['element_stripped'][selection] =
-        # numpy.core.defchararray.strip(fix_element_names) except: # so
+        # numpy.defchararray_strip(fix_element_names) except: # so
         # element_stripped hasn't been defined yet
         #    self.__parent_molecule.information.get_atom_information() =
         #    append_fields(self.__parent_molecule.
         #    information.get_atom_information(), 'element_stripped',
-        #    data = numpy.core.defchararray.strip(
+        #    data = numpy.defchararray_strip(
         #    self.__parent_molecule.information.
         #    get_atom_information()['element']))
 
@@ -437,7 +438,7 @@ class Information():
         else:
             return len(self.__coordinates[selection])
 
-    def get_total_number_of_heavy_atoms(self):
+    def get_total_number_of_heavy_atoms(self, selection = None):
         """Counts the number of heavy atoms (i.e., atoms that are not
         hydrogens).
 
@@ -451,11 +452,14 @@ class Information():
 
         """
 
+        if selection is None:
+            selection = self.__parent_molecule.select_all()
+
         if self.__coordinates is None:
             return 0
 
         all_hydrogens = self.__parent_molecule.select_atoms({
-            'element_stripped':'H'
+            'element_stripped': 'H'
         })
 
         return self.get_total_number_of_atoms() - len(all_hydrogens)
@@ -476,10 +480,11 @@ class Information():
 
             """
 
-        if selection is None: selection = self.__parent_molecule.select_all()
+        if selection is None: 
+            selection = self.__parent_molecule.select_all()
 
-        return numpy.vstack((numpy.min(self.__coordinates[selection], 0),
-                             numpy.max(self.__coordinates[selection], 0)))
+        return numpy.vstack((numpy.min(self.__coordinates[selection], 0) - padding,
+                             numpy.max(self.__coordinates[selection], 0) + padding))
 
     def get_bounding_sphere(self, selection = None, padding = 0.0):
         """Calculates a sphere that bounds (encompasses) a set of atoms.
@@ -509,7 +514,7 @@ class Information():
         # get distance to farthest point in selection
         return (center_of_selection[0],
                 numpy.max(
-                    cdist(center_of_selection,
+                    numpy.cdist(center_of_selection,
                           self.__coordinates[selection])[0])
                 )
 

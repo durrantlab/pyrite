@@ -1,7 +1,4 @@
-import numpy
-import scipy
-from scipy.spatial.distance import squareform
-from scipy.spatial.distance import pdist
+from pymolecule import dumbpy as numpy
 
 
 class AtomsAndBonds():
@@ -50,7 +47,7 @@ class AtomsAndBonds():
         ])
 
         # which ones could possibly be bound (less than the max_bond_length)
-        distances = squareform(pdist(self.__parent_molecule.get_coordinates()))
+        distances = numpy.squareform(numpy.pdist(self.__parent_molecule.get_coordinates()))
         ones_to_consider = numpy.nonzero(distances < max_bond_length * 1.2)
 
         for index in range(len(ones_to_consider[0])):
@@ -333,7 +330,6 @@ class AtomsAndBonds():
         element_stripped = element.strip()
 
         consts = self.__parent_molecule.get_constants()
-        atom_inf = self.__parent_molecule.information.get_atom_information()
 
         try:
             mass = consts['mass_dict'][element_stripped]
@@ -360,9 +356,10 @@ class AtomsAndBonds():
         # ********
 
         atom_information = numpy.ma.resize(
-            atom_inf,
+            self.__parent_molecule.get_atom_information(),
             self.__parent_molecule.information.get_total_number_of_atoms() + 1
         )
+
         atom_information['record_name'][-1] = record_name
         atom_information['name'][-1] = name
         atom_information['resname'][-1] = resname
@@ -381,8 +378,8 @@ class AtomsAndBonds():
         self.__parent_molecule.set_atom_information(atom_information)
         #self.__parent_molecule.assign_masses()
 
-        if 'mass' in atom_inf.dtype.names:
-            atom_inf['mass'][-1] = mass
+        if 'mass' in atom_information.dtype.names:
+            atom_information['mass'][-1] = mass
 
         # now add the coordinates
         if self.__parent_molecule.get_coordinates() is None:

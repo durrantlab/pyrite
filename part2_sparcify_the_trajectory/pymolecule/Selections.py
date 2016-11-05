@@ -1,6 +1,5 @@
-import numpy
+from pymolecule import dumbpy as numpy
 import sys
-from scipy.spatial.distance import cdist
 
 class Selections():
     """A class for selecting atoms"""
@@ -34,12 +33,6 @@ class Selections():
             Returns:
                 A numpy.array containing the indices of the atoms of the
                     selection.
-
-            >>> _sample_selection().select_atoms(
-            ...     {'element_stripped':'C'}
-            ... )
-            array([1, 2, 4, 5, 6])
-
         """
 
         try:
@@ -103,16 +96,6 @@ class Selections():
             Returns:
                 A numpy.array containing the indices of the atoms that are
                     within the bounding box.
-
-            >>> _sample_selection().select_atoms_in_bounding_box(
-            ...     numpy.array([
-            ...         [-2.1, 66.0, 75.6], 
-            ...         [-1.5, 68.0, 79.0]
-            ...     ])
-            ... )
-            array([3, 4])
-
-
         """
 
         min_pt = bounding_box[0]
@@ -144,20 +127,18 @@ class Selections():
                 bound to the user-specified selection. Note that this new
                 selection does not necessarily include the indices of the
                 original user-specified selection.
-
-            >>> _sample_selection().select_all_atoms_bound_to_selection(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     )    
-            ... )
-            array([0, 2, 4])
-
         """
 
         if self.__parent_molecule.information.get_bonds() is None:
             print ("You need to define the bonds to use" +
                    "select_all_atoms_bound_to_selection().")
             return
+
+        #print 1, self
+        #print 2, self.__parent_molecule
+        #print 3, self.__parent_molecule.get_bonds()
+        #print 4, selection
+        #import pdb; pdb.set_trace()
 
         bonds_to_consider = self.__parent_molecule.get_bonds()[selection]
 
@@ -257,14 +238,6 @@ class Selections():
                 A numpy.array containing the indices of the atoms belonging to
                     the same molecules as the atoms of the user-defined
                     selection.
-
-            >>> _sample_selection().select_atoms_from_same_molecule(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     )    
-            ... )
-            array([0, 1, 2, 3, 4, 5, 6])
-
         """
 
         # If your "Molecule" object actually contains several molecules, this
@@ -379,15 +352,6 @@ class Selections():
                 A numpy.array containing the indices of all atoms near the
                     user-defined selection, not including the atoms of the
                     user-defined selection themselves.
-
-            >>> _sample_selection().select_atoms_near_other_selection(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     ),
-            ...     2.0
-            ... )
-            array([0, 2, 4])
-
         """
 
         # note that this does not return a selection that includes the input
@@ -402,7 +366,7 @@ class Selections():
         inversion_coors = prnt.get_coordinates()[invert_selection]
 
         indices_of_nearby = invert_selection[numpy.unique(
-            numpy.nonzero(cdist(inversion_coors, selection_coors) < cutoff)[0]
+            numpy.nonzero(numpy.cdist(inversion_coors, selection_coors) < cutoff)[0]
         )]
 
         return indices_of_nearby
@@ -419,14 +383,6 @@ class Selections():
             Returns:
                 A numpy.array containing the indices of all atoms in the same
                     residue as any of the atoms of the user-defined selection.
-
-            >>> _sample_selection().select_atoms_in_same_residue(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     )
-            ... )
-            array([0, 1, 2, 3, 4, 5, 6])
-
         """
 
         # get string ids representing the residues of all atoms
@@ -474,14 +430,6 @@ class Selections():
             Returns:
                 A numpy.array containing the indices of all atoms that are not
                     in the user-defined seleciton.
-
-            >>> _sample_selection().invert_selection(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     )
-            ... )
-            array([0, 2, 3, 4, 5, 6])
-
         """
 
         # selection is a list of atom indices
@@ -499,10 +447,6 @@ class Selections():
             Returns:
                 A numpy.array containing the indices of all atoms in the
                     pymolecule.Molecule object.
-
-            >>> _sample_selection().select_all()
-            array([0, 1, 2, 3, 4, 5, 6])
-
         """
 
         return self.select_atoms({})
@@ -537,7 +481,7 @@ class Selections():
 
         if pairwise_comparison == True:
 
-            dists = cdist(self.__parent_molecule.get_coordinates(),
+            dists = numpy.cdist(self.__parent_molecule.get_coordinates(),
                           other_mol.get_coordinates())
             close_ones = numpy.nonzero(dists < cutoff)
             close_ones_from_mol_parent_molecule = numpy.unique(close_ones[0])
@@ -598,7 +542,7 @@ class Selections():
                 return (numpy.array([]), numpy.array([]))
 
             # check the chains
-            chain_distances = cdist(
+            chain_distances = numpy.cdist(
                 slf_hrachy['spheres']['chains']['centers'],
                 other_mol.get_hierarchy()['spheres']['chains']['centers']
             )
@@ -631,7 +575,7 @@ class Selections():
                 return (numpy.array([]), numpy.array([]))
 
             # check the residues
-            residue_distances = cdist(
+            residue_distances = numpy.cdist(
                 slf_hrachy['spheres']['residues']['centers'],
                 other_mol.get_hierarchy()['spheres']['residues']['centers']
             )
@@ -691,7 +635,7 @@ class Selections():
                 other_coors = other_coordinates[other_res_indicies]
 
                 some_self_indices, some_other_indices = numpy.nonzero(
-                    cdist(self_coors, other_coors) < cutoff
+                    numpy.cdist(self_coors, other_coors) < cutoff
                 )
 
                 if len(some_self_indices) != 0 or len(some_other_indices) != 0:
@@ -730,18 +674,9 @@ class Selections():
             Returns:
                 A pymolecule.Molecule object containing the atoms of the
                     user-defined selection.
-
-            >>> _sample_selection().get_molecule_from_selection(
-            ...     _sample_selection().select_atoms(
-            ...         {'name_stripped':'CA'}
-            ...     ),
-            ...     False, False
-            ... ).get_atom_information()
-            array([0, 2, 3, 4, 5, 6])
-
             """
 
-        from pymolecule import Molecule
+        from Molecule import Molecule
         new_mol = Molecule()
         new_mol.set_coordinates(
             self.__parent_molecule.get_coordinates()[selection]
@@ -807,10 +742,6 @@ class Selections():
                     unique resname-resseq-chainid residue identifiers, and the
                     values are numpy.array objects containing the indices of
                     the associated residue atoms.
-
-            >>> _sample_selection().selections_of_residues()
-            {'VAL-1-A': array([0, 1, 2, 3, 4, 5, 6])}
-
             """
 
         prnt = self.__parent_molecule
@@ -851,114 +782,3 @@ class Selections():
                 )
 
         return prnt.get_hierarchy()['residues']['indices']
-
-    def in_same_ring(self, index1, index2):
-        """Determines if two atoms in a Molecule are in the same ring.
-
-        Args:
-            index1 -- index of the first atom to see if it is in the ring.
-            index2 -- index of the second atom to see if it is in the ring.
-
-        Returns:
-            A set of vertices of a path that has been traversed.
-
-        """
-
-        if index1 == index2: return True
-
-        paths = []
-
-        paths = self.__ring_recursive_walk(index1, index2, [], 0)
-
-        if len(paths) == 0:
-            print "No paths found between two indices"
-            return False
-
-        #Remove paths that do not start or end at the correct location
-        for path in paths:
-            if not (index2 in path and index1 in path): paths.remove(path)
-
-        #Now need to find the intersection between each combination of paths
-        for path1, path2 in itertools.combinations(paths, 2):
-            intersection = set(path1).intersection(set(path2))
-
-            #Only two elements are in index1 and index2
-            if (len(intersection) == 2 and
-                index1 in intersection and
-                index2 in intersection):
-
-                return True
-
-        return False
-
-    def __ring_recursive_walk(self, start, end, already_crossed, ringsize):
-        """Recursive helper method to traverse a graph to search for a circular
-        subgraph.
-
-        Args:
-            start -- graph vertex that is currently being traversed
-            end -- vertex to be reached
-            alreadyCrossed -- list of vertices already processed
-            ringsize - counts number of vertices traversed
-
-        Returns:
-            A set of vertices of a path that has been traversed
-
-        """
-
-        paths = []
-
-        ring_size += 1
-        already_crossed.append(start)
-
-        #Base case 1: Second point is reached
-        if start == end:
-            paths.append(already_crossed)
-            return paths
-
-        #Base case 2: Max ring size is reached
-        if ring_size >= self.__max_ring_size():
-            paths.append(already_crossed)
-            return paths
-
-        # Base case 3: No new neighbors
-        # Get a list of all the atoms that atom:index is connected to that
-        # haven't been previously evaluated
-        sel = self.self.__parent_molecule.select_all_atoms_bound_to_selection
-        neighbors = sel(numpy.array([start]))[:]
-
-        for neighbor_index in neighbors:
-            if neighbor_index in already_crossed:
-                neighbors.remove(neighbor_index)
-
-        if len(neighbors) == 0:
-            paths.append(already_crossed)
-            return paths
-
-        for neighbor in neighbors:
-            paths.extend(
-                self.__ring_recursive_walk(neighbor, end,
-                                           already_crossed[:], ring_size)
-            )
-
-        return paths
-
-
-########## For unit testing ############
-
-test_selection = None;
-
-def _sample_selection():
-    """A helper function that loads an example selection for testing."""
-
-    global test_selection
-
-    if test_selection is None:
-        import Molecule as molecule
-        import Selections as selections
-        m = molecule.Molecule()
-        m.load_pdb_into("./sample_structures/amino_acid_1.pdb", True, True, True)
-        test_selection = selections.Selections(m)
-    
-    return test_selection
-
