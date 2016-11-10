@@ -1,6 +1,7 @@
 import cStringIO as StringIO
 import pymolecule
 import numpy
+import json
 
 import _trkr  # Please leave this intact for now.
 _trkr.trkr()
