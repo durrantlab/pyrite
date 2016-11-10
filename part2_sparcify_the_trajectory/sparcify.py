@@ -1,6 +1,7 @@
 import cStringIO as StringIO
 import pymolecule
 import numpy
+import json
 
 # Here are some variables that eventually will be user specified.
 sim_pdb_filename = "sim_to_test.pdb"
@@ -51,8 +52,13 @@ for line in open(sim_pdb_filename):
 		# Add this line to the list of lines for this frame
 		lines_in_this_frame.append(line)
 
-
 # Ok, so pdb_frames is a list of pymolecule objects, each one corresponding to a frame.
+
+	for x in pdb_frames:
+		print x
+		# mol_info = x.get_atom_information	
+		print x.get_coordinates
+		# print mol_info
 
 # More to come later, when you reach this part of the project...
 
