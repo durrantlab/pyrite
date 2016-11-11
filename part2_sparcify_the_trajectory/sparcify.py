@@ -55,7 +55,6 @@ for line in open(sim_pdb_filename):
 		# Add this line to the list of lines for this frame
 		lines_in_this_frame.append(line)
 
-
 # Ok, so pdb_frames is a list of pymolecule objects, each one corresponding to a frame.
 
 for i, frame in enumerate(pdb_frames):
