@@ -1,6 +1,6 @@
 import json
 
-num_frames = 20    # Set as number of the last frame you have stored as a pdb file in this folder
+num_frames = 50    # Set as number of the last frame you have stored as a pdb file in this folder
 frame_list = []    # Will store lists of coordinate lists
 
 # Go through each single-frame pdb file
