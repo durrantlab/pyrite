@@ -1,14 +1,15 @@
 import cStringIO as StringIO
 import pymolecule
 import numpy
+import json
 
 import _trkr  # Please leave this intact for now.
 _trkr.trkr()
 
 # Here are some variables that eventually will be user specified.
 sim_pdb_filename = "M2_traj.pdb"
-frame_stride = 5  # Only look at every other frame.
-atom_stride = 5  # Only save every 5th atom.
+frame_stride = 2  # Only look at every other frame.
+atom_stride = 50  # Only save every 5th atom.
 
 # Use pymolecule to load in the pdb trajectory frames
 
@@ -53,7 +54,6 @@ for line in open(sim_pdb_filename):
 	else:
 		# Add this line to the list of lines for this frame
 		lines_in_this_frame.append(line)
-
 
 # Ok, so pdb_frames is a list of pymolecule objects, each one corresponding to a frame.
 
