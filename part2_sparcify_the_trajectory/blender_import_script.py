@@ -19,5 +19,7 @@ for x in range(len(coord_list[0])):
     tail = coord_list[0][x]
     tail[2] = tail[2] - 1   # Reduces Z coordinate by 1 for tail to create bone length
     bone.tail = tail    # Sets tail as modified atom coordinate
+    bone.envelope_weight = 1.0  # Needed for envelope-based mesh vertex weighting.
+    bone.envelope_distance = 10.0
 
 bpy.ops.object.mode_set(mode='OBJECT')
