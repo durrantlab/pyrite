@@ -1,6 +1,8 @@
 import json
 import bpy
 
+# Note: Should change frame numbers for pdb files to be same as keyframes
+
 # Loading JSON data into a list in Blender
 with open('/Users/niveditarajendiran/Documents/University of Pittsburgh/Senior Year/Durrant Lab/Lab Files/labcode/part2_sparcify_the_trajectory/converting_to_json/frame_coordinate_list.json') as json_data:
     coord_list = json.load(json_data)
@@ -24,18 +26,16 @@ for atom in range(len(coord_list[0])):
 
 bpy.ops.object.mode_set(mode='OBJECT')
 
-# Note: could change frame numbers for pdb files to be same as keyframes
-
 # Posing bones for all frames
-ob = bpy.context.active_object # Armature
+arm = bpy.context.active_object # Armature
 bpy.ops.object.mode_set(mode='POSE')
 
 for atom in range(0, len(coord_list[0])):
-    bone = ob.pose.bones['atom' + str(atom)]
-    keyframe_num = 0 # Resets frame number
+    bone = arm.pose.bones['atom' + str(atom)]
+    keyframe_num = 0    # Resets frame number
     for frame in range(0, len(coord_list)):
         bpy.context.scene.frame_set(keyframe_num)  # Sets next frame to add
         bone.location = coord_list[frame][atom]
         bone.keyframe_insert(data_path="location")
-        # bpy.context.object.pose.bones['atom' + str(atom)].keyframe_insert(data_path="location")
+
         keyframe_num += 5 # Set as frame_stride (from sparcify.py)
