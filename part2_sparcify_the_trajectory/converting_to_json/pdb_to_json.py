@@ -5,7 +5,7 @@ frame_list = []    # Will store lists of coordinate lists
 
 # Go through each single-frame pdb file
 for x in range(num_frames + 1):
-    sim_pdb_filename = "frame" + str(num_frames) + ".pdb"
+    sim_pdb_filename = "frame" + str(x) + ".pdb"
     coordinate_list = []    # Will store lists of coordinates
 
     # Go through each of the lines in a single-frame pdb file
