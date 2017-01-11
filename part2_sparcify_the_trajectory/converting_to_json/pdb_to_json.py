@@ -12,12 +12,15 @@ for x in range(num_frames + 1):
     for line in open(sim_pdb_filename):
         # Obtain x, y, z coordinate elements from line if not empty
         if line != '\n':
-            coordinates = [line[30] + line[31] + line[32] + line[33] + line[34] + line[35] + line[36] + line[37]]       # x
-            coordinates.append(line[38] + line[39] + line[40] + line[41] + line[42] + line[43] + line[44] + line[45])   # y
-            coordinates.append(line[46] + line[47] + line[48] + line[49] + line[50] + line[51] + line[52] + line[53])   # z
+            coordinates = [line[30:38]]       # x
+            coordinates.append(line[38:46])   # y
+            coordinates.append(line[46:54])   # z
             coordinates = [float(coordinates[0].strip()), float(coordinates[1].strip()), float(coordinates[2].strip())]
             coordinate_list.append(coordinates)
 
+            # 0, 1, 2
+            ## 0, 2, 1
+            ## 1, 0, 2
     # Append list of coordinate lists from newly read frame to the frame list
     frame_list.append(coordinate_list)
 
