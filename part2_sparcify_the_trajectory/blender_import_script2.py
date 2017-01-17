@@ -4,7 +4,7 @@ import bpy
 # Note: Should change frame numbers for pdb files to be same as keyframes
 
 # Loading JSON data into a list in Blender
-with open('/Users/niveditarajendiran/Documents/University of Pittsburgh/Senior Year/Durrant Lab/Lab Files/labcode/part2_sparcify_the_trajectory/converting_to_json/frame_coordinate_list.json') as json_data:
+with open('/Users/niveditarajendiran/Documents/University of Pittsburgh/Senior Year/Durrant Lab/Lab Files/labcode/part2_sparcify_the_trajectory/frame_coordinate_list.json') as json_data:
     coord_list = json.load(json_data)
 
 # Creating armature
