@@ -46,7 +46,7 @@ for line in open(sim_pdb_filename):
 
 			# Save this pymolecule object to our list
 			pdb_frames.append(mol)
-			print mol
+			print(mol)
 
 		# Clear the list of lines for this frame, increment current frame
 		lines_in_this_frame = []

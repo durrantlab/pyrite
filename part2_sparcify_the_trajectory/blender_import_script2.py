@@ -38,4 +38,4 @@ for frame in range(0, len(coord_list)):
         bone.location = coord_list[frame][atom]
         bone.keyframe_insert(data_path="location")
 
-    keyframe_num += 5 # Set as frame_stride (from sparcify.py)
+    keyframe_num += 2 # Set as frame_stride (from sparcify.py)
