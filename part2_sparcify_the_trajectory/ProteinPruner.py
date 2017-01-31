@@ -28,7 +28,7 @@ for i, c in enumerate(coordinates):
 
 kd.balance()
 
-new_spheres = []    # Will contain coordinates for pruned spheres
+new_spheres = []    # Will contain lists of coordinates for all pruned spheres
 
 # Find all bones within radius, keep only every certain number of bones
 for x in spheres:
@@ -36,8 +36,6 @@ for x in spheres:
     radius = x[3]
     every_other = x[4]
     bones_in_sphere = kd.find_range(co_find, radius)
-    bones_to_keep = []
-    for i, b in enumerate(bones_in_sphere):
-        if (i % every_other) == 0:
-            bones_to_keep.append(b)
+    bones_in_sphere = np.array(bones_in_sphere)
+    bones_to_keep = bones_in_sphere[::every_other]
     new_spheres.append(bones_to_keep)
