@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import scipy
 import scoria
+import MDAnalysis as mda
 
 
 class InformationTests(unittest.TestCase):
@@ -21,7 +22,8 @@ class InformationTests(unittest.TestCase):
         if not os.path.exists("./scoria_tests_tmp"):
             os.mkdir("./scoria_tests_tmp")
 
-        self.mol = scoria.Molecule("PDB", "./scoria/sample_files/3_mol_test.pdb")
+        self.mol = scoria.Molecule("./scoria/sample_files/3_mol_test.pdb")
+        self.mda = mda.Universe("./scoria/sample_files/3_mol_test.pdb")
         self.accuracy = 4
 
     def tearDown(self):

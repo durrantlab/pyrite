@@ -95,7 +95,7 @@ class Test:
 
         print("Information Functions")
         print("    get_filename()")
-        print("        Filename: " + self.mol.get_filename())
+        print("        Filename: " + self.mol.get_filename()[0])
 
         print("    get_remarks()")
         print("        " + str(self.mol.get_remarks()))

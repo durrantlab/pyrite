@@ -23,12 +23,9 @@ class Molecule: # here's the actual Molecule class
         >>> mol.load_via_MDAnalysis(PSF, DCD)
     """
 
-    def __init__ (self, fileType=None, *args):
+    def __init__(self, *args):
         """
         Initializes the variables of the Molecule class.
-
-        :param string fileType: The type of file to be imported. Acceptable
-            values include: PDB, PDBQT, PYM, and OTHER.
 
         :param files args: Additional files added to the end of the paramter
             will be input with the method indicated by the fileType parameter.
@@ -42,19 +39,24 @@ class Molecule: # here's the actual Molecule class
         self.other_molecules = OtherMolecules(self)
         self.geometry = Geometry(self)
 
-        # Based on the fileType given, we are going to attempt to open the file.
+        # Based on the file type, we will attempt to open the file.
         # If the type is not one we recognize, we'll attempt to use MDAnalysis.
-        if fileType is not None:
-            typeUpper = str(fileType).upper()
-            if typeUpper == 'PDB':
-                self.load_pdb_into(args[0])
-            elif typeUpper == 'PDBQT':
-                self.load_pdbqt_into(args[0])
-            elif typeUpper == 'PYM':
-                self.load_pym_into(args[0])
+        if len(args) > 0:
+            if len(args) == 1:
+                file = args[0]
+                file_type = file.split('.')[-1].upper()
+
+                if file_type == 'PDB':
+                    self.load_pdb_into(file)
+                elif file_type == 'PDBQT':
+                    self.load_pdbqt_into(file)
+                elif file_type == 'PYM':
+                    self.load_pym_into(file)
+                else:
+                    self.load_via_MDAnalysis(file)
             else:
                 self.load_via_MDAnalysis(args)
-    
+
     # Information methods
     ### Wrappers ###
     # Gets
