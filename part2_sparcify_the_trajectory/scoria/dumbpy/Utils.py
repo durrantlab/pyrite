@@ -5,8 +5,8 @@ from .DType import dtype as dtypeClass
 from .Support import to_list
 from .Support import var_type
 import math
-from six.moves import range
-from six.moves import zip
+from ..six.moves import range
+from ..six.moves import zip
 
 def genfromtxt(fname, dtype = "", names = [], delimiter = []):
     """Generates an array from a text file.
