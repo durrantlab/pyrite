@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from scoria import dumbpy as numpy
-from six.moves import range
+from .six.moves import range
 import copy
 
 class Manipulation():

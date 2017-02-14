@@ -3,10 +3,10 @@ from __future__ import print_function
 from scoria import dumbpy as numpy
 import os
 import sys
-from six.moves import range
-from six.moves import zip
+from .six.moves import range
+from .six.moves import zip
 
-try: import ..six.moves.cPickle as pickle  # python2
+try: import .six.moves.cPickle as pickle  # python2
 except: import pickle  # python3
 
 import shutil

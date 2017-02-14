@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from scoria.Molecule import Molecule
-from six.moves import range
+from .six.moves import range
 
 try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3

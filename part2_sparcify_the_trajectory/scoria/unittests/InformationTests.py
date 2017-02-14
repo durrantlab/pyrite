@@ -8,7 +8,7 @@ import numpy as np
 import scipy
 import scoria
 import MDAnalysis as mda
-from six.moves import range
+from ..six.moves import range
 
 
 class InformationTests(unittest.TestCase):
