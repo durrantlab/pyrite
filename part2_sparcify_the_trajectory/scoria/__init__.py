@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from scoria.Information import Information
 from scoria.AtomsAndBonds import AtomsAndBonds
 from scoria.FileIO import FileIO
@@ -10,5 +11,7 @@ from scoria.Selections import Selections
 from scoria.Test import Test
 
 # from scoria.unittests.UnitTests import UnitTests
+
+from scoria.unittests.UnitTests import UnitTests
 
 __version__ = "2.0"

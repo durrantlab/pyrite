@@ -1,8 +1,16 @@
+from __future__ import absolute_import
+import warnings
 import unittest
-import InformationTests as IT
-import FileIOTests as FIOT
+from . import InformationTests as IT
+from . import FileIOTests as FIOT
+from . import GeometryTests as GT
+from . import ManipulationTests as MT
+from . import OtherMoleculeTests as OMT
+from . import SelectionTests as ST
 
-class UnitTests():
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+class UnitTests(object):
     """
     Unit testing object for scoria.
     """
@@ -13,14 +21,9 @@ class UnitTests():
         self._suite = unittest.TestSuite()
         self._runner = unittest.TextTestRunner()
 
-    def add_all_tests(self):
-        """
-        Adds all available tests to the suite.
-        """
-        self.add_information_tests()
-        self.add_fileio_tests()
+    # Running Suite
 
-    def run_suite(self):
+    def run(self):
         """
         Runs the currently queued suite of tests.
         """
@@ -31,7 +34,20 @@ class UnitTests():
         Quickly runs all unit tests.
         """
         self.add_all_tests()
-        self.run_suite()
+        self.run()
+
+    # Add specific module tests
+
+    def add_all_tests(self):
+        """
+        Adds all available tests to the suite.
+        """
+        self.add_information_tests()
+        self.add_fileio_tests()
+        self.add_geometry_tests()
+        self.add_selection_tests()
+        self.add_manipulation_tests()
+        self.add_other_molecule_tests()
 
     def add_information_tests(self):
         """
@@ -46,3 +62,33 @@ class UnitTests():
         """
         fileio_tests = unittest.makeSuite(FIOT.FileIOTests)
         self._suite.addTests(fileio_tests)
+
+    def add_geometry_tests(self):
+        """
+        Adds the information tests.
+        """
+        tests = unittest.makeSuite(GT.GeometryTests)
+        self._suite.addTests(tests)
+        
+    def add_manipulation_tests(self):
+        """
+        Adds the information tests.
+        """
+        tests = unittest.makeSuite(MT.ManipulationTests)
+        self._suite.addTests(tests)
+
+    def add_other_molecule_tests(self):
+        """
+        Adds the information tests.
+        """
+        tests = unittest.makeSuite(OMT.OtherMoleculeTests)
+        self._suite.addTests(tests)
+
+    def add_selection_tests(self):
+        """
+        Adds the information tests.
+        """
+        tests = unittest.makeSuite(ST.SelectionsTests)
+        self._suite.addTests(tests)
+        
+        

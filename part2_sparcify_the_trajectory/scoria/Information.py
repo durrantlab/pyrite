@@ -1,4 +1,7 @@
+from __future__ import absolute_import
 from scoria import dumbpy as numpy
+from six.moves import range
+import copy
 
 
 class Information():
@@ -205,7 +208,7 @@ class Information():
         An example for printing the elemental symbols of the first five atoms::
 
             >>> atom_info = mol.get_atom_information()
-            >>> print(atom_info['element_stripped'][0:5])
+            >>> print(atom_info['element'][0:5])
             ['N' 'C' 'C' 'O' 'C']
         """
 
@@ -230,7 +233,6 @@ class Information():
 
             >>> for coord in mol.get_trajectory_coordinates():
             >>>     print(coord)
-            >>>     print()
             [[ -30.85199928  -81.45800018  365.05499268]
              [ -31.99500084  -80.69300079  365.66900635]
              [ -32.0530014   -81.13200378  367.18200684]
@@ -238,7 +240,6 @@ class Information():
              [ -27.54199982  -96.25099945  402.83700562]
              [ -23.54199982  -94.7539978   400.41900635]
              [ -22.86100006  -93.72499847  400.55300903]]
-
             [[ -30.6779995   -81.32499695  365.73199463]
              [ -31.88100052  -80.38600159  366.0289917 ]
              [ -32.40399933  -80.62799835  367.45700073]
@@ -249,7 +250,7 @@ class Information():
              <more>
         """
 
-        return self.__trajectory
+        return copy.deepcopy(self.__trajectory)
 
     def get_coordinates(self, frame = None):
         """
@@ -324,7 +325,7 @@ class Information():
         An example for finding all atoms bonded with atom 153::
 
             >>> bonds = mol.get_bonds()
-            >>> for i in xrange(0,len(bonds)):
+            >>> for i in range(0,len(bonds)):
             ...     if bonds[153][i] == 1:
             ...             print(153,"-",i)
             153 - 152
@@ -402,7 +403,7 @@ class Information():
     def set_remarks(self, remarks):
         """
         Sets the __remarks variable.
-        
+
         Wrapper function for :meth:`~scoria.Molecule.Molecule.set_remarks`
 
         :param list(str) remarks: List containing remarks.
@@ -412,14 +413,14 @@ class Information():
 
     def set_atom_information(self, atom_information):
         """
-        Sets the __atom_information variable. See 
+        Sets the __atom_information variable. See
         :meth:`~scoria.Molecule.Molecule.get_atom_information` for
         information on the numpy.array structure.
-        
+
         Wrapper function for :meth:`~scoria.Molecule.Molecule.set_atom_information`
 
         :param numpy.array atom_information: An array containing details
-                            on the constituent atoms. 
+                            on the constituent atoms.
         """
 
         self.__atom_information = atom_information
@@ -503,7 +504,7 @@ class Information():
         # this function is retained for legacy reasons. past versions of
         # scoria had this functionality.
 
-        if (self.__atom_information['resname_stripped'][atom_index]
+        if (self.__atom_information['resname'][atom_index]
             in self.__constants['protein_residues']):
             return True
         return False
@@ -522,7 +523,7 @@ class Information():
         # this function is retained for legacy reasons. past versions of
         # scoria had this functionality.
 
-        if (self.__atom_information['resname_stripped'][atom_index]
+        if (self.__atom_information['resname'][atom_index]
             in self.__constants['dna_residues']):
             return True
 
@@ -543,7 +544,7 @@ class Information():
         # this function is retained for legacy reasons. past versions of
         # scoria had this functionality.
 
-        if (self.__atom_information['resname_stripped'][atom_index]
+        if (self.__atom_information['resname'][atom_index]
             in self.__constants['rna_residues']):
             return True
 
@@ -563,11 +564,11 @@ class Information():
         if not "mass" in self.__atom_information.dtype.names:
             # only assign if not been assigned previously
             masses = numpy.empty((
-                len(self.__atom_information['element_stripped'])
+                len(self.__atom_information['element'])
             ))
 
-            for i in range(len(self.__atom_information['element_stripped'])):
-                element = self.__atom_information['element_stripped'][i]
+            for i in range(len(self.__atom_information['element'])):
+                element = self.__atom_information['element'][i]
                 mass = self.__constants['mass_dict'][element]
                 masses[i] = mass
 
@@ -596,9 +597,11 @@ class Information():
             return
 
         # get the atom names
-        fix_element_names = numpy.defchararray_upper(
-            self.__atom_information['name'][selection]
-        )
+
+        fix_element_names = copy.deepcopy(self.__atom_information['name_padded']
+                                          [selection].astype('<U5'))
+
+        fix_element_names = numpy.defchararray_upper(fix_element_names)
 
         fix_element_names = numpy.defchararray_strip(fix_element_names)
 
@@ -606,11 +609,12 @@ class Information():
         fix_element_names = numpy.defchararray_lstrip(fix_element_names,
                                                            '0123456789')
 
+
         # remove any thing, letters or numbers, that follows a number,
         # including the number itself. so C2L becomes C, not CL.
         for num in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
             # I wish there was a more numpified way of doing this. :(
-            tmp = numpy.defchararray_split(fix_element_names, num)
+            tmp = numpy.defchararray_split(fix_element_names.astype('<U5'), num)
             fix_element_names = numpy.empty(len(fix_element_names),
                                             dtype = "S5")
             for i, item in enumerate(tmp):
@@ -621,11 +625,10 @@ class Information():
 
         # identify ones that are two-letter elements and one-letter elements
         cnsts = self.__constants
-        one_tht_shf_b_2_lttrs = (
-            fix_element_names == cnsts['element_names_with_two_letters'][0]
-        )
 
-        for other_two_letter in cnsts['element_names_with_two_letters'][1:]:
+        one_tht_shf_b_2_lttrs = [False] * len(fix_element_names)
+
+        for other_two_letter in cnsts['element_names_with_two_letters']:
             one_tht_shf_b_2_lttrs = numpy.logical_or(
                 one_tht_shf_b_2_lttrs,
                 (fix_element_names == other_two_letter)
@@ -649,21 +652,23 @@ class Information():
 
         # they should be capitalized for consistency
         fix_element_names = numpy.defchararray_upper(fix_element_names)
+        stripped_element_names = numpy.defchararray_strip(fix_element_names)
 
         # now map missing element names back
-        self.__atom_information['element'][selection] = fix_element_names
+        self.__atom_information['element_padded'][selection] = fix_element_names
+        self.__atom_information['element'][selection] = stripped_element_names
 
         # element_stripped also needs to be updated try:
         # self.__parent_molecule.information.get_atom_information()
-        # ['element_stripped'][selection] =
+        # ['element'][selection] =
         # numpy.defchararray_strip(fix_element_names) except: # so
         # element_stripped hasn't been defined yet
         #    self.__parent_molecule.information.get_atom_information() =
         #    append_fields(self.__parent_molecule.
-        #    information.get_atom_information(), 'element_stripped',
+        #    information.get_atom_information(), 'element',
         #    data = numpy.defchararray_strip(
         #    self.__parent_molecule.information.
-        #    get_atom_information()['element']))
+        #    get_atom_information()['element_padded']))
 
     def get_center_of_mass(self, selection = None, frame = None):
         """
@@ -842,7 +847,7 @@ class Information():
             return 0
 
         all_hydrogens = self.__parent_molecule.select_atoms({
-            'element_stripped': 'H'
+            'element': 'H'
         })
 
         return self.get_total_number_of_atoms() - len(all_hydrogens)
@@ -943,7 +948,7 @@ class Information():
             return
 
         # first, check to see if it's already been defined
-        if 'spheres' in self.__hierarchy.keys():
+        if 'spheres' in list(self.__hierarchy.keys()):
             return
 
         # set up the new structure
@@ -968,7 +973,7 @@ class Information():
         # do calcs for the chains
         hrchy['spheres']['chains']['keys'] = numpy.array(
             # numpy string array e.g. ['a', 'b', 'c']
-            hrchy['chains']['indices'].keys()
+            list(hrchy['chains']['indices'].keys())
         )
 
         hrchy['spheres']['chains']['centers'] = numpy.empty(
@@ -991,7 +996,7 @@ class Information():
 
         # do calcs for the residues
         hrchy['spheres']['residues']['keys'] = numpy.array(
-            hrchy['residues']['indices'].keys()
+            list(hrchy['residues']['indices'].keys())
         )
 
         hrchy['spheres']['residues']['centers'] = numpy.empty(
@@ -1031,7 +1036,7 @@ class Information():
         """
 
         keys = numpy.defchararray_add(
-            self.__atom_information['resname_stripped'], '-'
+            self.__atom_information['resname'], '-'
         )
 
         keys = numpy.defchararray_add(
@@ -1042,7 +1047,7 @@ class Information():
         keys = numpy.defchararray_add(keys, '-')
 
         keys = numpy.defchararray_add(
-            keys, self.__atom_information['chainid_stripped']
+            keys, self.__atom_information['chainid']
         )
 
         keys2 = numpy.insert(keys, 0, '')[:-1]

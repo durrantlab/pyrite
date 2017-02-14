@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from scoria import dumbpy as numpy
 from scoria.Quaternion import Quaternion
 
@@ -30,12 +32,15 @@ class OtherMolecules():
                 
         :param scoria.Molecule other_mol: A scoria.Molecule that is to be aligned to
                     this one.
-        :param tuple tethers: A tuple of two numpy.array objects, where each array
-                    contains the indices of self and other_mol, respectively,
-                    such that equivalent atoms are listed in the same order.
-                    So, for example, if (atom 1, self = atom 3, other) and
-                    (atom2, self = atom6, other) than the tethers would be
-                    (numpy.array([1, 2]), numpy.array([3, 6])).
+        :param list[list] tethers: A list of lists, where the inner list is
+                          (tether1_index, tether2_index). That inner list can
+                          also be a numpy array. Each inner array contains the
+                          indices of self and other_mol, respectively, such
+                          that equivalent atoms are listed in the same order.
+                          So, for example, if (atom 1, self = atom 3, other)
+                          and (atom2,  self = atom6, other) than the tethers
+                          would be (numpy.array([1, 2]), numpy.array([3, 6])),
+                          or [(1, 2), (3, 6)].
 
         :returns: The new molecule.
         """
@@ -51,12 +56,12 @@ class OtherMolecules():
         if tethers is None:
             raise Exception('No tethers specified for RMSD alignment')
         elif tethers.shape[0] != 2:
-            raise Exception('Tethers should have only 2 rows')
+            raise Exception('Tethers should have only 2 columns')  # Because see T above, which makes rows at this point.
 
         # If weight_matrix isn't specified, then treat all atoms equally
         if weight_mat is None: 
             weight_mat = numpy.identity(tethers.shape[1])
-
+        
         # get the atoms corresponding to the tethers, in tether order
         self_static_atom_coordinates = (
             self.__parent_molecule.get_coordinates()[tethers[0]]
@@ -343,14 +348,16 @@ class OtherMolecules():
         :returns: A float, the RMSD between self and other_mol.
         """
 
+        tethers = numpy.transpose(tethers)
+
         slf_gt_crs = self.__parent_molecule.get_coordinates()
         if (len(slf_gt_crs) !=
             len(other_mol.get_coordinates())):
 
             print("Cannot calculate RMSD: number of atoms are not equal.")
-            print("\t" + (str(len(slf_gt_crs)) +
+            print(("\t" + (str(len(slf_gt_crs)) +
                           " vs. " + str(len(other_mol.get_coordinates())) +
-                          " atoms."))
+                          " atoms.")))
             return 99999999.0
 
         self_coors_in_order = slf_gt_crs[tethers[0]]
@@ -383,7 +390,7 @@ class OtherMolecules():
 
         return self.get_rmsd_equivalent_atoms_specified(
             other_mol,
-            (self_index_in_order, other_index_in_order)
+            list(zip(self_index_in_order, other_index_in_order))
         )
 
     def get_rmsd_heuristic(self, other_mol):
@@ -416,7 +423,7 @@ class OtherMolecules():
         other_atom_grps = {}
 
         for i, atm in enumerate(atom_inf):
-            element_stripped = atm["element_stripped"]
+            element_stripped = atm["element"]
             if not element_stripped in self_atom_grps.keys():
                 self_atom_grps[element_stripped] = []
                 other_atom_grps[element_stripped] = []

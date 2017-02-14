@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import unittest
 import os
 
@@ -14,9 +15,7 @@ class InformationTests(unittest.TestCase):
         """
         Setting up the test molecule.
         """
-        if not os.path.exists("./scoria_tests_tmp"):
-            os.mkdir("./scoria_tests_tmp")
-
+        
         self.mol = scoria.Molecule("PDB", "TEST.pdb")
 
     def tearDown(self):
