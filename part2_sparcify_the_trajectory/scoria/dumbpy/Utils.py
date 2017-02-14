@@ -1,9 +1,12 @@
-from Array import RecArray
-from Array import array
-from DType import dtype as dtypeClass
-from Support import to_list
-from Support import var_type
+from __future__ import absolute_import
+from .Array import RecArray
+from .Array import array
+from .DType import dtype as dtypeClass
+from .Support import to_list
+from .Support import var_type
 import math
+from six.moves import range
+from six.moves import zip
 
 def genfromtxt(fname, dtype = "", names = [], delimiter = []):
     """Generates an array from a text file.
@@ -44,7 +47,7 @@ def genfromtxt(fname, dtype = "", names = [], delimiter = []):
             data[name] = [float(l) for l in data[name]]
             dtype[i] = "float"
     
-    dtypes = zip(names, dtype)
+    dtypes = list(zip(names, dtype))
 
     return RecArray(data, dtypes)
 
@@ -507,7 +510,7 @@ def delete(arr, indx_to_delete):
     if var_type(arr) == "1D":
         # This only works with 1D arrays
         arr_lst = to_list(arr)
-        all_indx = range(len(arr_lst))
+        all_indx = list(range(len(arr_lst)))
         to_keep = array(list(set(all_indx) - set(indx_to_delete)))
 
         arr = array(arr)

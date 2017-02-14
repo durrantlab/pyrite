@@ -1,6 +1,8 @@
 """Loads external modules (numpy, scipy) if available. Otherwise, uses cheap
 imitations."""
 
+from __future__ import absolute_import
+from __future__ import print_function
 import textwrap
 import sys
 
@@ -100,43 +102,43 @@ try:
     dependencies_available.append("NUMPY")
 except:
     # Numpy not available, so load substitute (dumbpy)
-    from Array import array
-    from Utils import genfromtxt
-    from Utils import nonzero
-    from Utils import logical_or
-    from Utils import logical_not
-    from Utils import logical_and
-    from Utils import defchararray_strip
-    from Utils import defchararray_add
-    from Utils import defchararray_rjust
-    from Utils import defchararray_upper
-    from Utils import defchararray_lstrip
-    from Utils import defchararray_split
-    from DType import dtype
-    from Utils import vstack
-    from Utils import append_fields
-    from Utils import zeros
-    from Utils import _max as max
-    from Utils import _min as min
-    from Utils import unique
-    from Utils import insert
-    from Utils import append
-    from Utils import arange
-    from Utils import get_col
-    from Utils import ones
-    from Utils import empty
-    from Utils import sum
-    from Utils import delete
-    from Utils import setdiff1d
-    from Utils import power
-    from Utils import _cos as cos
-    from Utils import _sin as sin
-    from Utils import sqrt
-    from Utils import identity
-    from Utils import mean
-    from Utils import norm
-    from Utils import fabs
-    from Utils import stack_arrays
+    from .Array import array
+    from .Utils import genfromtxt
+    from .Utils import nonzero
+    from .Utils import logical_or
+    from .Utils import logical_not
+    from .Utils import logical_and
+    from .Utils import defchararray_strip
+    from .Utils import defchararray_add
+    from .Utils import defchararray_rjust
+    from .Utils import defchararray_upper
+    from .Utils import defchararray_lstrip
+    from .Utils import defchararray_split
+    from .DType import dtype
+    from .Utils import vstack
+    from .Utils import append_fields
+    from .Utils import zeros
+    from .Utils import _max as max
+    from .Utils import _min as min
+    from .Utils import unique
+    from .Utils import insert
+    from .Utils import append
+    from .Utils import arange
+    from .Utils import get_col
+    from .Utils import ones
+    from .Utils import empty
+    from .Utils import sum
+    from .Utils import delete
+    from .Utils import setdiff1d
+    from .Utils import power
+    from .Utils import _cos as cos
+    from .Utils import _sin as sin
+    from .Utils import sqrt
+    from .Utils import identity
+    from .Utils import mean
+    from .Utils import norm
+    from .Utils import fabs
+    from .Utils import stack_arrays
 
     dependencies_available.append("DUMBPY")
 
@@ -181,9 +183,9 @@ def class_dependency(action, dependency):
     if not dependency in dependencies_available:
         t = textwrap.TextWrapper(width = 60, subsequent_indent="       ")
         print()
-        print("\n".join(t.wrap("Error: Cannot " + action +
+        print(("\n".join(t.wrap("Error: Cannot " + action +
                                ". Install this recommended dependency: " +
-                               dependency)))
+                               dependency))))
         print()
         if missing_dependency_throws_error:
             raise ImportError("The " + dependency + " module is not available.")

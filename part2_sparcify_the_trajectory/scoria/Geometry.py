@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from scoria import dumbpy as numpy
 
 class Geometry():
@@ -45,8 +47,8 @@ class Geometry():
 
         #Make sure vectors aren't <0, 0, 0>
         if vector1_mag < 1e-10 or vector2_mag < 1e-10:
-            print("One of vectors to determine angle is " +
-                  "< 0, 0, 0 >...returning 0.")
+            print(("One of vectors to determine angle is " +
+                  "< 0, 0, 0 >...returning 0."))
             return 0
 
         vector1 = vector1 / vector1_mag

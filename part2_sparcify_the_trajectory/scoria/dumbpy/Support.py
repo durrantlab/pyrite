@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+import six
 def var_type(var):
     """A helper function to identify a variable's type.
 
@@ -8,7 +10,7 @@ def var_type(var):
             A string, the variable type.
     """
 
-    if isinstance(var, basestring):
+    if isinstance(var, six.string_types):
         return "string"
     
     # See if it's one of your dumbpy array objects

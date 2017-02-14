@@ -2,10 +2,14 @@
 well enough to run some of the scoria functions that couldn't run
 otherwise. Installing numpy/scipy is strongly recommended."""
 
+from __future__ import absolute_import
 import copy
-from DType import dtype as dtypeClass
-from Support import to_list
-from Support import var_type
+from .DType import dtype as dtypeClass
+from .Support import to_list
+from .Support import var_type
+import six
+from six.moves import range
+from six.moves import zip
 
 def array(lst, dtype=""):
     """Determines whether or not a 1D or 2D array should be used.
@@ -321,7 +325,7 @@ class RecArray:
             self.astype(dtypes)
         
     def __len__(self):
-        key = self.dict.keys()[0]
+        key = list(self.dict.keys())[0]
         return len(self.dict[key])
 
     def __repr__(self):
@@ -340,14 +344,14 @@ class RecArray:
         if var_typ == "string":
             # It's a string, so just lookup the corresponding column
             return self.dict[lookup_key]
-        elif isinstance(lookup_key[0], basestring):
+        elif isinstance(lookup_key[0], six.string_types):
             # So it's a list of strings. Return the columns.
 
             # So key must be something that should act on the individual
             # Arrays, like ["key1", "key2", "key3", "key4""]
             new_dict = {}
             for str_key in lookup_key:
-                if str_key in self.dict.keys():
+                if str_key in list(self.dict.keys()):
                     new_dict[str_key] = self.dict[str_key]
             
             #print "DDD", new_dict.keys()
@@ -356,8 +360,8 @@ class RecArray:
             updated_dict.dict = new_dict
 
             # get the new descr
-            descr = [d for d in self.dtype.descr if d[0] in new_dict.keys()]
-            names_ordered = [d for d in self.dtype.names_ordered if d in new_dict.keys()]
+            descr = [d for d in self.dtype.descr if d[0] in list(new_dict.keys())]
+            names_ordered = [d for d in self.dtype.names_ordered if d in list(new_dict.keys())]
 
             updated_dict.dtype = dtypeClass(descr)
             updated_dict.dtype.names_ordered = names_ordered

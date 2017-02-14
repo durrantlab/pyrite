@@ -1,4 +1,7 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from scoria import dumbpy as numpy
+from six.moves import range
 
 
 class AtomsAndBonds():
@@ -72,14 +75,15 @@ class AtomsAndBonds():
 
             if index1 != index2:
                 # so an atom is not bound to itself.__parent_molecule
-                key = (atom_inf['element_stripped'][index1] + '-' +
-                    atom_inf['element_stripped'][index2])
+                key = (atom_inf['element'][index1] + '-' +
+                    atom_inf['element'][index2])
 
                 try: bond_dist = consts['bond_length_dict'][key]
                 except:
+
                     print("ERROR: Unknown bond distance between elements " +
-                        atom_inf['element_stripped'][index1] + ' and ' +
-                        atom_inf['element_stripped'][index2] +
+                        atom_inf['element'][index1] + ' and ' +
+                        atom_inf['element'][index2] +
                         '. Assuming ' + str(max_bond_length) + '.')
                     bond_dist = max_bond_length
 
@@ -99,7 +103,7 @@ class AtomsAndBonds():
             consts = self.__parent_molecule.get_constants()
             for index in range(len(atom_inf)):
                 # get the info of the index atom
-                element = atom_inf['element_stripped'][index]
+                element = atom_inf['element'][index]
 
                 bond_partner_indices = sel_func(numpy.array([index]))
                 number_of_bonds = len(bond_partner_indices)
@@ -119,7 +123,7 @@ class AtomsAndBonds():
                         for t in range(len(bond_partner_indices)):
                             # populate the ideal-bond-length vector
                             index_partner = bond_partner_indices[t]
-                            element_partner = atom_inf['element_stripped'][
+                            element_partner = atom_inf['element'][
                                 index_partner]
                             ideal_dists[t] = consts['bond_length_dict'][
                                 element + '-' + element_partner]
@@ -173,7 +177,7 @@ class AtomsAndBonds():
 
         the_element = the_element.strip()
         bond_partners_selection = sel_func(numpy.array([atom_index]))
-        elements = atom_inf['element_stripped'][bond_partners_selection]
+        elements = atom_inf['element'][bond_partners_selection]
         return len(numpy.nonzero(elements == the_element)[0])
 
     def get_index_of_first_bond_partner_of_element(self, atom_index,
@@ -211,7 +215,7 @@ class AtomsAndBonds():
 
         the_element = the_element.strip()
         bond_partners_selection = sel_func(numpy.array([atom_index]))
-        elements = atom_inf['element_stripped'][bond_partners_selection]
+        elements = atom_inf['element'][bond_partners_selection]
 
         return bond_partners_selection[numpy.nonzero(elements == the_element)[0]][0]
 
@@ -234,8 +238,8 @@ class AtomsAndBonds():
         try:
             bonds[index1][index2] = 0
             bonds[index2][index1] = 0
-        except: print("Could not delete bond between " + str(index1) +
-                       " and " + str(index2) + ".")
+        except: print(("Could not delete bond between " + str(index1) +
+                       " and " + str(index2) + "."))
 
     def add_bond(self, index1, index2, order = 1):
         """
@@ -392,14 +396,14 @@ class AtomsAndBonds():
                 numpy.zeros(
                     (1,),
                     dtype = [('record_name', '|S6'), ('serial', '<i8'),
-                             ('name', '|S5'), ('resname', '|S4'),
-                             ('chainid', '|S2'), ('resseq', '<i8'),
+                             ('name_padded', '|S5'), ('resname_padded', '|S4'),
+                             ('chainid_padded', '|S2'), ('resseq', '<i8'),
                              ('occupancy', '<f8'), ('tempfactor', '<f8'),
-                             ('element', '|S2'), ('charge', '|S2'),
-                             ('name_stripped', '|S5'),
-                             ('resname_stripped', '|S4'),
-                             ('chainid_stripped', '|S2'),
-                             ('element_stripped', '|S2')]
+                             ('element_padded', '|S2'), ('charge', '|S2'),
+                             ('name', '|S5'),
+                             ('resname', '|S4'),
+                             ('chainid', '|S2'),
+                             ('element', '|S2')]
                 )
             )
 
@@ -411,15 +415,15 @@ class AtomsAndBonds():
         )
 
         atom_information['record_name'][-1] = record_name
-        atom_information['name'][-1] = name
-        atom_information['resname'][-1] = resname
-        atom_information['chainid'][-1] = chainid
+        atom_information['name_padded'][-1] = name
+        atom_information['resname_padded'][-1] = resname
+        atom_information['chainid_padded'][-1] = chainid
         atom_information['charge'][-1] = charge
-        atom_information['element'][-1] = element
-        atom_information['name_stripped'][-1] = name_stripped
-        atom_information['resname_stripped'][-1] = resname_stripped
-        atom_information['chainid_stripped'][-1] = chainid_stripped
-        atom_information['element_stripped'][-1] = element_stripped
+        atom_information['element_padded'][-1] = element
+        atom_information['name'][-1] = name_stripped
+        atom_information['resname'][-1] = resname_stripped
+        atom_information['chainid'][-1] = chainid_stripped
+        atom_information['element'][-1] = element_stripped
         atom_information['serial'][-1] = serial
         atom_information['resseq'][-1] = resseq
         atom_information['occupancy'][-1] = occupancy
