@@ -8,7 +8,7 @@ spheres = [
     [0, 0, 0, 25, 10],
     [-30, -70, 375, 100, 2],
     [-35, -80, 370, 100, 2],
-    [-35, -80, 370, 10, 2],
+    [-35, -80, 370, 10, 5],
 ]
 
 # Load the trajectory
@@ -39,3 +39,7 @@ for x in spheres:
     bones_in_sphere = np.array(bones_in_sphere)
     bones_to_keep = bones_in_sphere[::every_other]
     new_spheres.append(bones_to_keep)
+
+print(bones_in_sphere)
+print("---------")
+print(bones_to_keep)
