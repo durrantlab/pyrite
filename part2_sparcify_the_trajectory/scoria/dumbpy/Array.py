@@ -7,9 +7,9 @@ import copy
 from .DType import dtype as dtypeClass
 from .Support import to_list
 from .Support import var_type
-import six
-from six.moves import range
-from six.moves import zip
+import ..six
+from ..six.moves import range
+from ..six.moves import zip
 
 def array(lst, dtype=""):
     """Determines whether or not a 1D or 2D array should be used.

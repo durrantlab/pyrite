@@ -1,5 +1,7 @@
 from __future__ import absolute_import
-import six
+import ..six
+
+
 def var_type(var):
     """A helper function to identify a variable's type.
 
