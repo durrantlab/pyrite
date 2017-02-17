@@ -3,6 +3,16 @@ import numpy as np
 import mathutils
 from bpy import context
 
+# For testing, in blender remember to:
+# import sys
+# sys.path.append("/Users/jdurrant/Documents/Work/durrant_git/nivedita/part2_sparcify_the_trajectory/")
+# import os
+# os.chdir("/Users/jdurrant/Documents/Work/durrant_git/nivedita/part2_sparcify_the_trajectory/")
+# from imp import reload
+# Then:
+# import protein_pruner
+# reload("protein_pruner")
+
 # Hard code input for spheres, [x, y, z, radius, every_other]
 spheres = [
     [0, 0, 0, 25, 10],
