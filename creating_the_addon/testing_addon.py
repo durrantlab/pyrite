@@ -164,7 +164,7 @@ class Properties:
             update=update
         )
 
-    def strProp(self, txt, default="", update=nothing):
+    def strProp(self, txt, default="", subtype='NONE', update=nothing):
         """
         Define a string property.
 
@@ -187,6 +187,7 @@ class Properties:
             name=txt,
             default=default,
             description="Text",
+            subtype=subtype,
             update=update
         )
 
@@ -307,7 +308,7 @@ class UI:
         specific that what is generic).
 
         So, for example, if you want to select/deselect all the objects in
-        your scene, you could use this button with the rel_daata_path set to
+        your scene, you could use this button with the rel_data_path set to
         "object.select_all".
 
         :param str rel_data_path: A string specifiying what this button should
@@ -357,7 +358,7 @@ class PanelParentClass(bpy.types.Panel):
     # frequently).
     obj = None
     scene = None
-    
+
     # All panels will have associated properties and a user interface, so make
     # those here.
     prop_funcs = Properties()
@@ -376,7 +377,7 @@ class PanelParentClass(bpy.types.Panel):
         you define all the properties for your panel (see example below).
         """
 
-        self.setup_properties()  # Can you call a class def like this? If you get an error, you can't.
+        self.setup_properties()
 
     @classmethod
     def setup_properties(self):
@@ -387,7 +388,7 @@ class PanelParentClass(bpy.types.Panel):
         """
 
         assert False, "You need to define a setup_properties() definition in your own Panel class!"
-    
+
     def set_class_variables(self, context):
         self.obj = context.object
         self.scene = bpy.context.scene
@@ -402,9 +403,6 @@ class Mineral(PanelParentClass):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
 
-    # frames = bpy.props.IntProperty(name="Frames", description="Every # of frames to keep.", default=5, min=1, max=100)
-    # atoms = bpy.props.IntProperty(name="Atoms", description="Every # of atoms to keep.", default=2, min=1, max=100)
-
     @classmethod
     def setup_properties(self):
         """
@@ -412,12 +410,24 @@ class Mineral(PanelParentClass):
         class must have this function!
         """
 
+        # frame_stride description = Every # of frames to keep
+        # overall_pruning_stride description = Every # of atoms to keep
+
         # Set up scene and object properties.
-        bpy.types.Object.pdb_filename = self.prop_funcs.strProp("Enter PDB filename", "sample.pdb", nothing)
+        bpy.types.Object.pdb_filename = self.prop_funcs.strProp("Enter PDB filename", "sample.pdb", 'FILE_PATH', nothing)
         bpy.types.Object.frame_stride = self.prop_funcs.intProp("Frame stride", 1, 100, 2, nothing)
-        bpy.types.Object.overall_atom_stride = self.prop_funcs.intProp("Overall atom stride", 1, 100, 5, nothing)
+        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Overall atom stride", 1, 100, 5, nothing)
+
+        bpy.types.Object.sphere_coordinate = bpy.props.FloatVectorProperty(
+            name="Center coordinates",
+            default=(0.0, 0.0, 0.0)
+        )
+        bpy.types.Object.sphere_radius = self.prop_funcs.intProp("Radius of sphere", 1, 100, 20, nothing)
+        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Pruning stride", 1, 100, 5, nothing)
 
         # bpy.types.Object.center_coord = self.prop_funcs.intVectorProp("Center coordinates", (-1000, -1000, -1000), (1000, 1000, 1000), (0, 0, 0), 'NONE', 3, nothing)
+        # Need a float vector property to input atom coordinates
+        # How do we make it possible to enter more coordinates if desired?
 
     def draw(self, context):
         """
@@ -431,6 +441,12 @@ class Mineral(PanelParentClass):
         :param ??? context: The context of the currently selected object.
         """
 
+        self.trajectory = None
+        self.kdtree = None
+        self.overall_pruning_stride = 1
+        self.pruning_spheres = []
+        self.frame_stride = None
+
         self.set_class_variables(context)
 
         self.ui.use_layout_row()
@@ -441,12 +457,219 @@ class Mineral(PanelParentClass):
         self.ui.object_property(property_name="frame_stride")
 
         self.ui.use_box_row("Pruning")
-        self.ui.object_property(property_name="overall_atom_stride")
-        self.ui.object_property(property_name="goat_type")
+        self.ui.object_property(property_name="overall_pruning_stride")
+
+        self.ui.use_box_row("Add Pruning Sphere")
+        self.ui.object_property(property_name="sphere_coordinate")
+        self.ui.object_property(property_name="sphere_radius")
+        self.ui.object_property(property_name="sphere_pruning_stride")
 
         self.ui.use_layout_row()
         self.ui.ops_action_button(rel_data_path="object.select_all", button_label="Display Protein", action="INVERT")
+        # How do I make this call a function?
 
+    def load_pdb_trajectory(self, pdb_filename, frame_stride):
+        """
+        Loads molecule trajectory from a given PDB file into a numpy array.
+        Keeps every certain number of frames in array based on user-inputted value.
+
+        Args:
+        pdb_filename (string): The name of a PDB file (including '.pdb').
+        frame_stride (integer): The stride for frames to keep.
+
+        Returns:
+
+        """
+        obj = context.object
+
+        print("Loading PDB trajectory: " + pdb_filename)
+        self.pdb_filename = pdb_filename
+        self.frame_stride = frame_stride
+
+        # Load the trajectory
+        self.trajectory = scoria.Molecule()
+        self.trajectory.load_pdb_trajectory_into(self.pdb_filename, bonds_by_distance = False, serial_reindex = False, resseq_reindex = False)
+
+        # Delete every frame_stride frames.
+        print("Keeping only every " + str(frame_stride) + " frames...")
+        frame_indices = numpy.array(range(self.trajectory.get_trajectory_frame_count()))
+        frame_indices_to_keep = frame_indices[::frame_stride]
+        frame_indices_to_delete = numpy.setdiff1d(frame_indices, frame_indices_to_keep)
+        for idx in frame_indices_to_delete[::-1]:
+            self.trajectory.delete_trajectory_frame(idx)
+
+    def make_bones_from_molecules(self):
+        """
+        """
+        try:  # So dumb that blender throws an error if it's already in object mode...
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+
+        # Add enough empties to match the number of bones. 
+        for index in range(self.trajectory.get_total_number_of_atoms()):
+            empty = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
+            empty = bpy.context.object
+            empty.name = "empty" + str(index)
+
+        # Now go through the frames and position those empties
+        for frame_index in range(0, self.trajectory.get_trajectory_frame_count(), self.frame_stride):
+            bpy.context.scene.frame_set(frame_index)  # Sets next frame to add
+
+            for coor_index, coor in enumerate(self.trajectory.get_coordinates(frame=frame_index)):
+                empty = bpy.data.objects["empty" + str(coor_index)]
+                empty.location = coor
+                empty.keyframe_insert(data_path='location')
+
+        # Creating armature
+        bpy.ops.object.add(type='ARMATURE', enter_editmode=True)
+        object = bpy.context.object
+        object.name = 'Armature'
+        armature = object.data
+        armature.name = 'Frame'
+
+        # Add bones
+        for index in range(self.trajectory.get_total_number_of_atoms()):
+            bone_name = 'bone' + str(index)
+            bone = armature.edit_bones.new(bone_name)
+            bone.head = (0, 0, 0)
+            bone.tail = (0, 0, 2)
+            #bone.envelope_weight = 1.0  # Needed for envelope-based mesh vertex weighting.
+            #bone.envelope_distance = 2.0
+
+        # Now constrain them.
+        bpy.ops.object.mode_set(mode='POSE')
+        armature = bpy.data.objects["Armature"]
+
+        for index in range(self.trajectory.get_total_number_of_atoms()):
+            bone = armature.pose.bones['bone' + str(index)]
+            constraint = bone.constraints.new(type="COPY_LOCATION")
+            constraint.target = bpy.data.objects["empty" + str(index)]
+
+        # Now make sure the pose at frame 0 is set as the rest pose (so you
+        # can do automatic weights later...)
+        bpy.context.scene.frame_set(0)
+        bpy.ops.pose.armature_apply()
+
+    def add_overall_pruning_stride(self, atom_stride):
+        """
+        Prunes the protein based on the user-inputted atom stride. Deletes every
+        certain number of atoms in the coordinate array based on user-inputted value.
+
+        Args:
+        atom_stride (integer): The stride for atoms to keep in the entire protein.
+
+        Returns:
+
+        """
+        print("Keeping only every " + str(atom_stride) + " atoms...")
+        self.pruning_spheres.append((atom_stride, 0.0, 0.0, 0.0, 1e50))
+
+    def add_pruning_sphere(self, center_x, center_y, center_z, radius, atom_stride):
+        """
+        Prunes atoms in the protein within a sphere of a certain radius around set coordinates.
+        Atom stride, coordinates, and radius are set by user input.
+
+        Args:
+        center_x (integer): x coordinate for center of sphere.
+        center_y (integer): y coordinate for center of sphere.
+        center_z (integer): z coordinate for center of sphere.
+        radius (integer): Radius of the sphere.
+        atom_stride (integer): Stride for atoms to keep within the sphere.
+
+        Returns:
+
+        """
+        self.pruning_spheres.append((atom_stride, center_x, center_y, center_z, radius))
+
+    def apply_prune(self):
+        """
+        Applies pruning spheres to the existing protein.
+
+        Args:
+
+        Returns:
+
+        """
+        # The key is to use the smallest pruning stride possible for a given
+        # point.
+
+        # Make a kd tree if needed
+        coors = self.trajectory.get_coordinates(frame=0)  # So kdtree
+                                                          # calculated on
+                                                          # coordinates of
+                                                          # first frame only.
+        if self.kdtree is None:
+            # Create kd-tree containing atom/bone coordinates
+            self.kdtree = mathutils.kdtree.KDTree(len(coors))
+            bone_list = []
+
+            # Add coordinates to tree
+            for i, c in enumerate(coors):
+                self.kdtree.insert(c, i)
+
+            self.kdtree.balance()
+
+        # Make sure the pruning spheres are ordered by the stride, from
+        # smallest to greatest.
+        self.pruning_spheres.sort()
+
+        # Go through each sphere and apply a mask, where true means the
+        # coordinate is in the given sphere, and false means it isn't.
+        masks = []
+        for sphere in self.pruning_spheres:
+            # Get the coordinate indices that are in the sphere
+            atom_stride, center_x, center_y, center_z, radius = sphere
+            co_find = (center_x, center_y, center_z)
+            coors_in_sphere = self.kdtree.find_range(co_find, radius)
+            coors_in_sphere = numpy.array(coors_in_sphere)
+
+            # doesn't work.
+            indices_in = set([])
+            for coor in coors_in_sphere:
+                indices_in.add(int(coor[1]))
+
+            # Make the mask, with those set to true that are within the
+            # sphere.
+            mask = numpy.zeros(self.trajectory.get_total_number_of_atoms()).astype(bool)
+            indices_in = list(indices_in)
+
+            if len(indices_in) > 0:
+                mask[indices_in] = True
+
+            # Save that mask
+            masks.append(mask)
+
+        # Now go through each of the points and decide whether or not to keep
+        # it.
+        indices_to_keep = []
+        for coor_index, coor in enumerate(coors):
+            # Find the sphere that this point is in with the lowest stride.
+            # Use that stride.
+            for sphere_index, sphere in enumerate(self.pruning_spheres):
+                if masks[sphere_index][coor_index] == True:
+                    # The point is in one of the spheres.
+                    atom_stride = self.pruning_spheres[sphere_index][0]
+                    if coor_index % atom_stride == 0:
+                        # It matches the stride, so keep it.
+                        indices_to_keep.append(coor_index)
+                    break  # No need to keep looking through the spheres for
+                           # this point. You've got your match.
+
+        # Actually prune the molecule.
+        self.trajectory = self.trajectory.get_molecule_from_selection(indices_to_keep)
+
+    def display_protein(self, context):
+        """
+        What should be run when the display button is pressed.
+        """
+        obj = context.object
+        print(obj['pdb_filename'])
+        self.load_pdb_trajectory(obj['pdb_filename'], obj['frame_stride'])
+        self.add_overall_pruning_stride(obj['overall_pruning_stride'])
+        # self.add_pruning_sphere(-30, -85, 397, 8, 1)
+        self.apply_prune()
+        self.make_bones_from_molecules()
 
 def menu_func(self, context):
     self.layout.operator(Mineral.bl_idname)

@@ -23,7 +23,9 @@ spheres = [
 
 # Load the trajectory
 traj = scoria.Molecule()
-traj.load_pdb_trajectory_into("M2_traj.pdb", bonds_by_distance = False, serial_reindex = False, resseq_reindex = False)
+traj.load_pdb_trajectory_into("M2_traj.pdb")
+# traj.load_pdb_trajectory_into("/Users/niveditarajendiran/Documents/University of Pittsburgh/Senior Year/Durrant Lab/Lab Files/labcode/part2_sparcify_the_trajectory/M2_traj.pdb", bonds_by_distance = False, serial_reindex = False, resseq_reindex = False)
+
 
 coordinates = traj.get_coordinates()    # Stored as numpy array
 
