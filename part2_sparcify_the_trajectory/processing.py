@@ -3,9 +3,6 @@ import scoria
 import numpy
 import json
 
-import _trkr  # Please leave this intact for now.
-_trkr.trkr()
-
 class Mineral:
     def __init__(self):
         self.pdb_filename = ""
