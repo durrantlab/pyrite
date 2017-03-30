@@ -4,9 +4,6 @@ import scoria
 import numpy
 import json
 
-# import _trkr  # Please leave this intact for now.
-# _trkr.trkr()
-
 # Here are some variables that eventually will be user specified.
 sim_pdb_filename = "M2_traj.pdb"
 frame_stride = 2  # Only look at every other frame.

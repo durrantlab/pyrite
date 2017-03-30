@@ -8,9 +8,6 @@ import mathutils
 from bpy import context
 import bpy
 
-#import _trkr  # Please leave this intact for now.
-#_trkr.trkr()
-
 class Mineral:
     def __init__(self):
         print("Creating mineral object!")
