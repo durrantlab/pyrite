@@ -699,6 +699,13 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
         self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, 0, 0, 0, 30, 20)    # Not working right now
         self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
         make_bones_from_molecules(self.trajectory, self.frame_stride)
+
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+        bpy.context.scene.objects.active = bpy.data.objects['Armature']
+        bpy.ops.view3d.view_selected(use_all_regions=False)
         return{'FINISHED'}
 
 class OBJECT_OT_AddSphereButton(bpy.types.Operator):
