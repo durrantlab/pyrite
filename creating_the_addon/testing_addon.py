@@ -442,12 +442,6 @@ class Mineral(PanelParentClass):
         :param ??? context: The context of the currently selected object.
         """
 
-        self.trajectory = None
-        self.kdtree = None
-        self.overall_pruning_stride = 1
-        self.pruning_spheres = []
-        self.frame_stride = None
-
         self.set_class_variables(context)
 
         self.ui.use_layout_row()
@@ -456,17 +450,27 @@ class Mineral(PanelParentClass):
         self.ui.use_box_row("Load a Protein")
         self.ui.object_property(property_name="pdb_filename")
         self.ui.object_property(property_name="frame_stride")
+        self.ui.new_row()
 
         self.ui.use_box_row("Pruning")
         self.ui.object_property(property_name="overall_pruning_stride")
+        self.ui.new_row()
+
+        self.ui.use_layout_row()
+        self.layout.operator("protein.display")
+
+        self.ui.new_row()
+        self.ui.new_row()
 
         self.ui.use_box_row("Add Pruning Sphere")
         self.ui.object_property(property_name="sphere_coordinate")
         self.ui.object_property(property_name="sphere_radius")
         self.ui.object_property(property_name="sphere_pruning_stride")
 
-        self.ui.use_layout_row()
-        self.layout.operator("protein.display")
+        self.layout.operator("add.sphere")
+
+        self.ui.new_row()
+        self.layout.operator("finalize.spheres")
 
 def load_pdb_trajectory(pdb_filename, frame_stride):
     """
@@ -532,6 +536,7 @@ def add_pruning_sphere(pruning_spheres, center_x, center_y, center_z, radius, at
 
     """
     pruning_spheres.append((atom_stride, center_x, center_y, center_z, radius))
+    return pruning_spheres
 
 def apply_prune(trajectory, kdtree, pruning_spheres):
     """
@@ -666,6 +671,9 @@ def menu_func(self, context):
     self.layout.operator(Mineral.bl_idname)
 
 class OBJECT_OT_DisplayButton(bpy.types.Operator):
+    """
+    Button for displaying basic pruned protein.
+    """
     bl_idname = "protein.display"
     bl_label = "Display Protein"
 
@@ -688,14 +696,58 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
 
         self.trajectory = load_pdb_trajectory(obj['pdb_filename'], self.frame_stride)
         self.pruning_spheres = add_overall_pruning_stride(self.pruning_spheres, self.overall_pruning_stride)
-        # self.add_pruning_sphere(self.pruning_spheres, -30, -85, 397, 8, 1)
+        self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, 0, 0, 0, 30, 20)    # Not working right now
         self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
         make_bones_from_molecules(self.trajectory, self.frame_stride)
         return{'FINISHED'}
 
+class OBJECT_OT_AddSphereButton(bpy.types.Operator):
+    # """
+    # Button for adding a positioning sphere.
+    # """
+    bl_idname = "add.sphere"
+    bl_label = "Add a Sphere"
+
+    def execute(self, context):
+        """
+        Adds a sphere to the scene.
+        """
+
+        obj = context.object
+        print(obj)
+
+        try:  # So dumb that blender throws an error if it's already in object mode...
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+
+        # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
+        # add sphere at a default location unless optional user input provided
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, size=8.0, view_align=False, enter_editmode=False, location=(-30, -85, 397), rotation=(0.0, 0.0, 0.0))
+        # be able to change size of sphere
+        # make sphere more transparent?
+        # menu select and edit a sphere already added
+        # command to grab object and position (or select object and press G): bpy.ops.transform.translate()
+
+        return{'FINISHED'}
+
+class OBJECT_OT_FinalizeButton(bpy.types.Operator):
+    # """
+    # Finalize button for removing all positioning spheres.
+    # """
+    bl_idname = "finalize.spheres"
+    bl_label = "Finalize Pruning Spheres"
+
+    def execute(self, context):
+        """
+        Removes all positioning spheres.
+        """
+
+        # delete all objects beginning with "pruning_sphere"
+        return{'FINISHED'}
+
 # store keymaps here to access after registration
 addon_keymaps = []
-
 
 ##### Registration functions #####
 def register():
@@ -706,6 +758,8 @@ def register():
     bpy.utils.register_class(Mineral)
     bpy.types.VIEW3D_MT_object.append(menu_func)
     bpy.utils.register_class(OBJECT_OT_DisplayButton)
+    bpy.utils.register_class(OBJECT_OT_AddSphereButton)
+    bpy.utils.register_class(OBJECT_OT_FinalizeButton)
 
     # # handle the keymap
     # wm = bpy.context.window_manager
@@ -724,6 +778,8 @@ def unregister():
     bpy.utils.unregister_class(Mineral)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
     bpy.utils.unregister_class(OBJECT_OT_DisplayButton)
+    bpy.utils.unregister_class(OBJECT_OT_AddSphereButton)
+    bpy.utils.unregister_class(OBJECT_OT_FinalizeButton)
 
     # # handle the keymap
     # wm = bpy.context.window_manager
