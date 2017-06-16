@@ -40,11 +40,10 @@ import mineral
 mineral.register()
 `
 
-If you make changes to the plugin, you need to unregister, reload the module,
-and reregister.:
+If you make changes to the plugin, you need to reload the module and
+reregister.:
 
 ``python
-mineral.unregister()
 import imp
 imp.reload(mineral)
 mineral.register()
