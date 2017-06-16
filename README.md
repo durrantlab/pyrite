@@ -15,8 +15,8 @@ Blender, to take advantage of Blender's advanced rendering features. The basic s
 5. Load in the specified atoms ("bones")/frames. Interpolate between frames to animate.
 6. Skin these atoms/bones with the protein mesh.
 
-What's Currently Implemented
-============================
+What's Not Yet Implemented
+==========================
 
 I believe step 4 above isn't yet fully implemented. Also, the UI is incomplete.
 
@@ -25,27 +25,29 @@ Testing the Python Plugin in Blender
 To test the plugin in python, open up a Blender python console and add the
 plugin directory to the python path:
 
-`
+`python
 import sys
 sys.path.append("/Users/jdurrant/Documents/Work/durrant_git/nivedita/blender_addon")
 `
 
 Then import the module and register the plugin:
 
-`
+`python
 import mineral
 mineral.register()
 `
 
 If you make changes to the plugin, you need to unregister, reload the module, and reregister.:
 
-`
+`python
 mineral.unregister()
 import imp
 imp.reload(mineral)
 mineral.register()
 `
 
+Misc
+====
 
 Note that the pymolecule version here is not necessarily the latest version.
 
