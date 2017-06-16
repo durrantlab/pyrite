@@ -15,7 +15,7 @@ bl_info = {
     "version" : (1, 0, 0),
     "blender" : (2, 5, 7),
     "location" : "View 3D > ",
-    "description" : "",
+    "description" : "Mineral",
     "warning" : "",
     "wiki_url" : "",
     "tracker_url" : "",
@@ -395,7 +395,6 @@ class PanelParentClass(bpy.types.Panel):
         self.ui.parent = self
 
 
-
 class Mineral(PanelParentClass):
     """Mineral"""
     bl_label = "Mineral"
@@ -414,17 +413,17 @@ class Mineral(PanelParentClass):
         # overall_pruning_stride description = Every # of atoms to keep
 
         # Set up scene and object properties.
-        bpy.types.Object.pdb_filename = self.prop_funcs.strProp("Select PDB file", "sample.pdb", 'FILE_PATH', nothing)
-        bpy.types.Object.frame_stride = self.prop_funcs.intProp("Frame stride", 1, 100, 2, nothing)
+        bpy.types.Object.pdb_filename = self.prop_funcs.strProp("PDB file", "sample.pdb", 'FILE_PATH', nothing)
+        bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every n frames", 1, 100, 2, nothing)
         
-        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Overall atom stride", 1, 100, 5, nothing)
+        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 5, nothing)
 
-        bpy.types.Object.sphere_coordinate = bpy.props.FloatVectorProperty(
-            name="Center coordinates",
-            default=(0.0, 0.0, 0.0)
-        )
-        bpy.types.Object.sphere_radius = self.prop_funcs.intProp("Radius of sphere", 1, 100, 20, nothing)
-        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Pruning stride", 1, 100, 5, nothing)
+        # bpy.types.Object.sphere_coordinate = bpy.props.FloatVectorProperty(
+        #     name="Center coordinates",
+        #     default=(0.0, 0.0, 0.0)
+        # )
+        # bpy.types.Object.sphere_radius = self.prop_funcs.intProp("Radius of sphere", 1, 100, 20, nothing)
+        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 2, nothing)
 
         # bpy.types.Object.center_coord = self.prop_funcs.intVectorProp("Center coordinates", (-1000, -1000, -1000), (1000, 1000, 1000), (0, 0, 0), 'NONE', 3, nothing)
         # Need a float vector property to input atom coordinates
@@ -445,32 +444,40 @@ class Mineral(PanelParentClass):
         self.set_class_variables(context)
 
         self.ui.use_layout_row()
-        self.ui.label("Protein (Object Name: " + self.obj.name + ")")
+        self.ui.label("Protein Mesh (Object Name: " + self.obj.name + ")")
 
-        self.ui.use_box_row("Load a Protein")
+        self.ui.use_box_row("Load a Protein Trajectory")
+        self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
         self.ui.object_property(property_name="pdb_filename")
-        self.ui.object_property(property_name="frame_stride")
         self.ui.new_row()
 
-        self.ui.use_box_row("Pruning")
+        self.ui.use_box_row("Simplify Trajectory")
+        self.ui.label("Keep only some frames and atoms. Saves memory.")
+        self.ui.object_property(property_name="frame_stride")
         self.ui.object_property(property_name="overall_pruning_stride")
+        self.ui.new_row()
+
+        self.ui.use_box_row("Select High-Detail Regions")
+        self.ui.label("1. Select how many atoms to skip (text box)")
+        self.ui.label("2. Left click high-detail region (set 3D cursor)")
+        self.ui.label("3. Click \"Add Selection Sphere\" button")
+        self.ui.label("4. Position/scale selection sphere")
+        self.ui.label("5. Click \"Select Region\" button")
+
+        # self.ui.object_property(property_name="sphere_coordinate")
+        # self.ui.object_property(property_name="sphere_radius")
+        self.ui.object_property(property_name="sphere_pruning_stride")
+
+        self.layout.operator("add.sphere")
+        self.layout.operator("finalize.spheres")
+
         self.ui.new_row()
 
         self.ui.use_layout_row()
         self.layout.operator("protein.display")
 
         self.ui.new_row()
-        self.ui.new_row()
 
-        self.ui.use_box_row("Add Pruning Sphere")
-        self.ui.object_property(property_name="sphere_coordinate")
-        self.ui.object_property(property_name="sphere_radius")
-        self.ui.object_property(property_name="sphere_pruning_stride")
-
-        self.layout.operator("add.sphere")
-
-        self.ui.new_row()
-        self.layout.operator("finalize.spheres")
 
 def load_pdb_trajectory(pdb_filename, frame_stride):
     """
@@ -502,8 +509,6 @@ def load_pdb_trajectory(pdb_filename, frame_stride):
     for idx in frame_indices_to_delete[::-1]:
         trajectory.delete_trajectory_frame(idx)
     return trajectory
-
-
 
 def add_overall_pruning_stride(pruning_spheres, atom_stride):
     """
@@ -675,7 +680,7 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
     Button for displaying basic pruned protein.
     """
     bl_idname = "protein.display"
-    bl_label = "Display Protein"
+    bl_label = "Load Dynamics"
 
     def __init__(self):
         self.trajectory = None
@@ -690,11 +695,11 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
         """
 
         obj = context.object
-        print(obj)
-        self.frame_stride = obj['frame_stride']
-        self.overall_pruning_stride = obj['overall_pruning_stride']
 
-        self.trajectory = load_pdb_trajectory(obj['pdb_filename'], self.frame_stride)
+        self.frame_stride = obj.frame_stride
+        self.overall_pruning_stride = obj.overall_pruning_stride
+
+        self.trajectory = load_pdb_trajectory(obj.pdb_filename, self.frame_stride)
         self.pruning_spheres = add_overall_pruning_stride(self.pruning_spheres, self.overall_pruning_stride)
         self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, 0, 0, 0, 30, 20)    # Not working right now
         self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
@@ -713,7 +718,7 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
     # Button for adding a positioning sphere.
     # """
     bl_idname = "add.sphere"
-    bl_label = "Add a Sphere"
+    bl_label = "Add Selection Sphere (This Button Needs to Be in Row Above...)"
 
     def execute(self, context):
         """
@@ -721,7 +726,6 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
         """
 
         obj = context.object
-        print(obj)
 
         try:  # So dumb that blender throws an error if it's already in object mode...
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -743,7 +747,7 @@ class OBJECT_OT_FinalizeButton(bpy.types.Operator):
     # Finalize button for removing all positioning spheres.
     # """
     bl_idname = "finalize.spheres"
-    bl_label = "Finalize Pruning Spheres"
+    bl_label = "Select Region (This Button Needs to Be in Row Above...)"
 
     def execute(self, context):
         """
