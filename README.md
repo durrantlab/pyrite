@@ -28,23 +28,20 @@ Testing the Python Plugin in Blender
 To test the plugin in python, open up a Blender python console and add the
 plugin directory to the python path:
 
-`
-import sys
+`import sys
 sys.path.append("/Users/jdurrant/Documents/Work/durrant_git/nivedita/blender_addon")
 `
 
 Then import the module and register the plugin:
 
-`
-import mineral
+`import mineral
 mineral.register()
 `
 
 If you make changes to the plugin, you need to reload the module and
 reregister.:
 
-`
-import imp
+`import imp
 imp.reload(mineral)
 mineral.register()
 `
