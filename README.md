@@ -43,12 +43,12 @@ mineral.register()
 If you make changes to the plugin, you need to unregister, reload the module,
 and reregister.:
 
-`python
+``python
 mineral.unregister()
 import imp
 imp.reload(mineral)
 mineral.register()
-`
+``
 
 Misc
 ====
