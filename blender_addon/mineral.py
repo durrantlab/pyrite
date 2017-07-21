@@ -8,6 +8,8 @@ import mathutils
 import bpy
 from bpy import context
 from bpy.props import *
+from mathutils import Vector
+import time
 
 bl_info = {
     "name": "Mineral",
@@ -429,6 +431,9 @@ class Mineral(PanelParentClass):
         # Need a float vector property to input atom coordinates
         # How do we make it possible to enter more coordinates if desired?
 
+        global messages
+        messages = {}
+
     def draw(self, context):
         """
         Every panel class must have a draw function. It gets called over and
@@ -441,43 +446,93 @@ class Mineral(PanelParentClass):
         :param ??? context: The context of the currently selected object.
         """
 
+        global messages
+
         self.set_class_variables(context)
 
-        self.ui.use_layout_row()
-        self.ui.label("Protein Mesh (Object Name: " + self.obj.name + ")")
+        # Pick the object
+        obj_to_use = self.obj
+        if obj_to_use is None:
+            obj_to_use = bpy.context.scene.objects.active
+        
+        # What object name to use?
+        obj_to_use_name = obj_to_use.name if not obj_to_use.name.startswith("highres_sphere__") else obj_to_use.name.split("__")[1]
 
-        self.ui.use_box_row("Load a Protein Trajectory")
-        self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
-        self.ui.object_property(property_name="pdb_filename")
-        self.ui.new_row()
+        # Show the name
+        if obj_to_use.name.startswith("highres_sphere__"):
+            # It's one of the selection spheres...
+            self.ui.use_layout_row()
+            self.ui.label("Create New High-Detail Region")
+            self.ui.label("Move/scale the sphere to encompass the region.")
+            self.ui.object_property(property_name="sphere_pruning_stride")
 
-        self.ui.use_box_row("Simplify Trajectory")
-        self.ui.label("Keep only some frames and atoms. Saves memory.")
-        self.ui.object_property(property_name="frame_stride")
-        self.ui.object_property(property_name="overall_pruning_stride")
-        self.ui.new_row()
+            if "SPHERE_STRIDE_TOO_HIGH" in messages:
+                msg = messages["SPHERE_STRIDE_TOO_HIGH"]
+                if (int(time.time()) - msg["time"] < 5.0):
+                    self.ui.label(msg["msg"])
+                else:
+                    del messages["SPHERE_STRIDE_TOO_HIGH"]
+            self.ui.ops_button(rel_data_path="backto.protein", button_label="Back to Protein Mesh")
+            self.ui.ops_button(rel_data_path="delete.region", button_label="Delete Region")
+        else:
+            self.ui.use_layout_row()
+            self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
 
-        self.ui.use_box_row("Select High-Detail Regions")
-        self.ui.label("1. Select how many atoms to skip (text box)")
-        self.ui.label("2. Left click high-detail region (set 3D cursor)")
-        self.ui.label("3. Click \"Add Selection Sphere\" button")
-        self.ui.label("4. Position/scale selection sphere")
-        self.ui.label("5. Click \"Select Region\" button")
+            # It's not a selection sphere. Must be a mesh.
+            # Check if the location of the object is ok.
+            loc = [round(v, 1) for v in list(obj_to_use.location)]
+            rot = [round(v, 1) for v in list(obj_to_use.rotation_euler)]
+            scale = [round(v, 1) for v in list(obj_to_use.scale)]
+            if loc != [0.0, 0.0, 0.0] or rot != [0.0, 0.0, 0.0] or scale != [1.0, 1.0, 1.0]:
+                # The selected mesh must have location, rotation, and scale at rest.
+                self.ui.use_box_row("Trajectory and Protein-Mesh Positions Must Match!")
+                if loc != [0.0, 0.0, 0.0]:
+                    self.ui.label("Mesh location " + str(loc) + " is not [0.0, 0.0, 0.0]")
+                if rot != [0.0, 0.0, 0.0]:
+                    self.ui.label("Mesh rotation " + str(rot) + " is not [0.0, 0.0, 0.0]")
+                if scale != [0.0, 0.0, 0.0]:
+                    self.ui.label("Mesh rotation " + str(scale) + " is not [1.0, 1.0, 1.0]")
+                self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
+            else:
+                # The location is ok, so show normal ui
+                self.ui.use_box_row("Load a Protein Trajectory")
+                self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
+                self.ui.object_property(property_name="pdb_filename")
+                self.ui.new_row()
 
-        # self.ui.object_property(property_name="sphere_coordinate")
-        # self.ui.object_property(property_name="sphere_radius")
-        self.ui.object_property(property_name="sphere_pruning_stride")
+                self.ui.use_box_row("Simplify Trajectory")
+                self.ui.label("Keep only some frames and atoms. Saves memory.")
+                self.ui.object_property(property_name="frame_stride")
+                self.ui.object_property(property_name="overall_pruning_stride")
+                self.ui.new_row()
 
-        self.layout.operator("add.sphere")
-        self.layout.operator("finalize.spheres")
+                self.ui.use_box_row("High-Detail Regions")
 
-        self.ui.new_row()
+                # Go through and find the high-detail regions
+                spheres = [obj for obj in bpy.data.objects if obj.name.startswith("highres_sphere__")]
+                for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
+                    self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
 
-        self.ui.use_layout_row()
-        self.layout.operator("protein.display")
+                # cursor_3d_msg = "To create new, position 3D cursor and..."
+                if "SELECT_SPHERE" in messages:
+                    msg = messages["SELECT_SPHERE"]
+                    if (int(time.time()) - msg["time"] < 5.0):
+                        self.ui.label(msg["msg"])
+                    else:
+                        del messages["SELECT_SPHERE"]
+            
+                self.ui.ops_button(rel_data_path="add.sphere", button_label="Create Region")
 
-        self.ui.new_row()
+                self.ui.new_row()
 
+                self.ui.use_layout_row()
+                self.layout.operator("protein.display")
+
+                self.ui.new_row()
+
+        # if obj_to_use.name.startswith("highres_sphere__"):
+        #     # obj_to_use = bpy.data.objects[obj_to_use.name.split("__")[1]]
+        #     obj_to_use_name = obj_to_use.name.split("__")[1]
 
 def load_pdb_trajectory(pdb_filename, frame_stride):
     """
@@ -570,53 +625,70 @@ def apply_prune(trajectory, kdtree, pruning_spheres):
         kdtree.balance()
 
     # Make sure the pruning spheres are ordered by the stride, from
-    # smallest to greatest.
+    # smallest radius to greatest.
     pruning_spheres.sort()
 
     # Go through each sphere and apply a mask, where true means the
     # coordinate is in the given sphere, and false means it isn't.
-    masks = []
+    # masks = []
+    indices_in_previous_spheres = set([])
+    total_indices_to_keep = set([])
     for sphere in pruning_spheres:
         # Get the coordinate indices that are in the sphere
         atom_stride, center_x, center_y, center_z, radius = sphere
         co_find = (center_x, center_y, center_z)
         coors_in_sphere = kdtree.find_range(co_find, radius)
-        coors_in_sphere = numpy.array(coors_in_sphere)
+        # coors_in_sphere looks like this:
+        # (Vector((-26.695999145507812, -92.79199981689453, 389.52801513671875)), 777, 10.07503890991211)
 
-        # doesn't work.
-        indices_in = set([])
+        # Just keep the indices in this sphere
+        indices_in_this_sphere = set([])
         for coor in coors_in_sphere:
-            indices_in.add(int(coor[1]))
+            indices_in_this_sphere.add(int(coor[1]))
+        
+        # Remove from the ones in this sphere ones that were in previous spheres
+        indices_to_keep = indices_in_this_sphere - indices_in_previous_spheres
 
-        # Make the mask, with those set to true that are within the
-        # sphere.
-        mask = numpy.zeros(trajectory.get_total_number_of_atoms()).astype(bool)
-        indices_in = list(indices_in)
+        # Update indices_in_previous_spheres
+        indices_in_previous_spheres = indices_in_previous_spheres.union(indices_to_keep)
 
-        if len(indices_in) > 0:
-            mask[indices_in] = True
+        # Now only keep every few of the indices_to_keep
+        indices_to_keep_sparce = numpy.array(list(indices_to_keep))[::atom_stride]
 
-        # Save that mask
-        masks.append(mask)
+        # Update all the totals
+        total_indices_to_keep = total_indices_to_keep.union(set(indices_to_keep_sparce))
+
+        # # Make the mask, with those set to true that are within the
+        # # sphere.
+        # mask = numpy.zeros(trajectory.get_total_number_of_atoms()).astype(bool)
+        # indices_in_this_sphere = list(indices_in_this_sphere)
+
+        # if len(indices_in_this_sphere) > 0:
+        #     mask[indices_in_this_sphere] = True
+
+        # # Save that mask
+        # masks.append(mask)
+
+    total_indices_to_keep = numpy.array(list(total_indices_to_keep))
 
     # Now go through each of the points and decide whether or not to keep
-    # it.
-    indices_to_keep = []
-    for coor_index, coor in enumerate(coors):
-        # Find the sphere that this point is in with the lowest stride.
-        # Use that stride.
-        for sphere_index, sphere in enumerate(pruning_spheres):
-            if masks[sphere_index][coor_index] == True:
-                # The point is in one of the spheres.
-                atom_stride = pruning_spheres[sphere_index][0]
-                if coor_index % atom_stride == 0:
-                    # It matches the stride, so keep it.
-                    indices_to_keep.append(coor_index)
-                break  # No need to keep looking through the spheres for
-                        # this point. You've got your match.
+    # # it.
+    # indices_to_keep = []
+    # for coor_index, coor in enumerate(coors):
+    #     # Find the sphere that this point is in with the lowest stride.
+    #     # Use that stride.
+    #     for sphere_index, sphere in enumerate(pruning_spheres):
+    #         if masks[sphere_index][coor_index] == True:
+    #             # The point is in one of the spheres.
+    #             atom_stride = pruning_spheres[sphere_index][0]
+    #             if coor_index % atom_stride == 0:
+    #                 # It matches the stride, so keep it.
+    #                 indices_to_keep.append(coor_index)
+    #             break  # No need to keep looking through the spheres for
+    #                     # this point. You've got your match.
 
     # Actually prune the molecule.
-    trajectory = trajectory.get_molecule_from_selection(indices_to_keep)
+    trajectory = trajectory.get_molecule_from_selection(total_indices_to_keep) #indices_to_keep)
     return trajectory
 
 def make_bones_from_molecules(trajectory, frame_stride):
@@ -627,11 +699,20 @@ def make_bones_from_molecules(trajectory, frame_stride):
     except:
         pass
 
+    protein_obj = bpy.context.scene.objects.active
+
+    guide_empties = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
+    guide_empties = bpy.context.object
+    guide_empties.name = "GuideEmpties"
+    geo_center = numpy.mean(trajectory.get_coordinates(frame=0), axis=0)
+    guide_empties.location = geo_center
+    
     # Add enough empties to match the number of bones. 
     for index in range(trajectory.get_total_number_of_atoms()):
         empty = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
         empty = bpy.context.object
         empty.name = "empty" + str(index)
+        empty.parent = guide_empties
 
     # Now go through the frames and position those empties
     for frame_index in range(0, trajectory.get_trajectory_frame_count(), frame_stride):
@@ -639,7 +720,7 @@ def make_bones_from_molecules(trajectory, frame_stride):
 
         for coor_index, coor in enumerate(trajectory.get_coordinates(frame=frame_index)):
             empty = bpy.data.objects["empty" + str(coor_index)]
-            empty.location = coor
+            empty.location = coor - geo_center
             empty.keyframe_insert(data_path='location')
 
     # Creating armature
@@ -655,8 +736,8 @@ def make_bones_from_molecules(trajectory, frame_stride):
         bone = armature.edit_bones.new(bone_name)
         bone.head = (0, 0, 0)
         bone.tail = (0, 0, 2)
-        #bone.envelope_weight = 1.0  # Needed for envelope-based mesh vertex weighting.
-        #bone.envelope_distance = 2.0
+        bone.envelope_weight = 1.0  # Needed for envelope-based mesh vertex weighting.
+        bone.envelope_distance = 5.0
 
     # Now constrain them.
     bpy.ops.object.mode_set(mode='POSE')
@@ -671,6 +752,13 @@ def make_bones_from_molecules(trajectory, frame_stride):
     # can do automatic weights later...)
     bpy.context.scene.frame_set(0)
     bpy.ops.pose.armature_apply()
+
+    # Parent the protein mesh to that armature
+    for obj in bpy.data.objects: obj.select = False
+    protein_obj.select = True
+    armature.select = True
+    bpy.context.scene.objects.active = armature
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
     
 def menu_func(self, context):
     self.layout.operator(Mineral.bl_idname)
@@ -698,11 +786,20 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
 
         self.frame_stride = obj.frame_stride
         self.overall_pruning_stride = obj.overall_pruning_stride
-
         self.trajectory = load_pdb_trajectory(obj.pdb_filename, self.frame_stride)
+
+        # Add the pruning sphers
         self.pruning_spheres = add_overall_pruning_stride(self.pruning_spheres, self.overall_pruning_stride)
-        self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, 0, 0, 0, 30, 20)    # Not working right now
+        
+        for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("highres_sphere__")]:
+            x, y, z = list(sphere.location)
+            r = 5 * sphere.scale.x  # Because radius is 5 at creation
+            stride = sphere.sphere_pruning_stride
+            self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, x, y, z, r, stride)
+
+        # Prune the trajectory
         self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
+
         make_bones_from_molecules(self.trajectory, self.frame_stride)
 
         try:
@@ -711,18 +808,219 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
             pass
         bpy.context.scene.objects.active = bpy.data.objects['Armature']
         bpy.ops.view3d.view_selected(use_all_regions=False)
+
         return{'FINISHED'}
+
+def geometric_center(obj):
+    local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
+    global_bbox_center = obj.matrix_world * local_bbox_center
+    return global_bbox_center
 
 class OBJECT_OT_AddSphereButton(bpy.types.Operator):
     # """
     # Button for adding a positioning sphere.
     # """
     bl_idname = "add.sphere"
-    bl_label = "Add Selection Sphere (This Button Needs to Be in Row Above...)"
+    bl_label = "Add Selection Sphere"
 
     def execute(self, context):
         """
         Adds a sphere to the scene.
+        """
+
+        global messages
+
+        obj = context.object
+
+        # So dumb that blender throws an error if it's already in object mode...
+        try: bpy.ops.object.mode_set(mode='OBJECT')
+        except: pass
+
+        # Is the cursor near the mesh?
+        cursor_loc = bpy.context.scene.cursor_location
+        margin = 5.0
+        global_bbox_center = geometric_center(obj)
+        a_min = global_bbox_center - 0.5 * obj.dimensions
+        a_max = global_bbox_center + 0.5 * obj.dimensions
+
+        if cursor_loc.x > a_min.x - margin and cursor_loc.y > a_min.y - margin and cursor_loc.z > a_min.z - margin and cursor_loc.x < a_max.x + margin and cursor_loc.y < a_max.y + margin and cursor_loc.z < a_max.z + margin:
+            # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
+            # add sphere at a default location unless optional user input provided
+            bpy.ops.mesh.primitive_uv_sphere_add(
+                segments=16, 
+                ring_count=16, 
+                size=5.0, # Radius
+                view_align=False, 
+                enter_editmode=False, 
+                location=cursor_loc, 
+                rotation=(0.0, 0.0, 0.0)
+            )
+            
+            sphere = bpy.context.scene.objects.active
+
+            # Pick sphere name, making sure not already used
+            sphere_name = "highres_sphere__" + obj.name + "__" + str(0)
+            i = 0
+            while sphere_name in bpy.data.objects.keys():
+                i = i + 1
+                sphere_name = "highres_sphere__" + obj.name + "__" + str(i)
+
+            sphere.name = sphere_name
+            bpy.ops.object.modifier_add(type='WIREFRAME')
+            sphere.modifiers["Wireframe"].thickness = 0.2
+
+            # be able to change size of sphere
+            # make sphere more transparent?
+            # menu select and edit a sphere already added
+            # command to grab object and position (or select object and press G): bpy.ops.transform.translate()
+        else:
+            messages["SELECT_SPHERE"] = {
+                "msg": "ERROR: Click on protein mesh to position 3D cursor!",
+                "time": int(time.time())
+            }
+
+        return{'FINISHED'}
+
+class OBJECT_OT_SphereDoneButton(bpy.types.Operator):
+    # """
+    # Finalize button for removing all positioning spheres.
+    # """
+    bl_idname = "backto.protein"
+    bl_label = "Back to Protein Mesh"
+
+    def execute(self, context):
+        """
+        """
+
+        obj = context.object
+        protein_mesh_name = obj.name.split("__")[1]
+        protein_mesh = bpy.data.objects[protein_mesh_name]
+
+        # Make sure sphere pruning is less than whole protein pruning
+        if protein_mesh.overall_pruning_stride < obj.sphere_pruning_stride:
+            messages["SPHERE_STRIDE_TOO_HIGH"] = {
+                "msg": "ERROR: Value too big. Set <= " + str(protein_mesh.overall_pruning_stride) + " (general value).",
+                "time": int(time.time())
+            }
+
+        else:
+            for obj in bpy.data.objects: obj.select = False
+
+            bpy.context.scene.objects.active = protein_mesh
+            bpy.context.scene.objects.active.select = True
+        
+        return{'FINISHED'}
+
+class OBJECT_OT_DeleteSphereButton(bpy.types.Operator):
+    # """
+    # Finalize button for removing all positioning spheres.
+    # """
+    bl_idname = "delete.region"
+    bl_label = "Delete Region"
+
+    def execute(self, context):
+        """
+        """
+
+        obj = context.object
+        protein_mesh_name = obj.name.split("__")[1]
+        protein_mesh = bpy.data.objects[protein_mesh_name]
+
+        for o in bpy.data.objects: o.select = False
+        obj.select = True
+        bpy.ops.object.delete() 
+
+        bpy.context.scene.objects.active = protein_mesh
+        bpy.context.scene.objects.active.select = True
+
+        # Delete original object
+
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButtonParent(bpy.types.Operator):
+    # """
+    # Select an existing sphere
+    # """
+    bl_idname = ""
+    bl_label = ""
+
+    def switch_to_obj(self, index):
+        spheres = [obj for obj in bpy.data.objects if obj.name.startswith("highres_sphere__")]
+        sphere = spheres[index]
+        for obj in bpy.data.objects: obj.select = False
+        bpy.context.scene.objects.active = bpy.data.objects[sphere.name]
+        bpy.context.scene.objects.active.select = True
+
+class OBJECT_OT_SelectExistingSphereButton0(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere0"
+    def execute(self, context):
+        self.switch_to_obj(0)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton1(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere1"
+    def execute(self, context):
+        self.switch_to_obj(1)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton2(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere2"
+    def execute(self, context):
+        self.switch_to_obj(2)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton3(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere3"
+    def execute(self, context):
+        self.switch_to_obj(3)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton4(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere4"
+    def execute(self, context):
+        self.switch_to_obj(4)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton5(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere5"
+    def execute(self, context):
+        self.switch_to_obj(5)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton6(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere6"
+    def execute(self, context):
+        self.switch_to_obj(6)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton7(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere7"
+    def execute(self, context):
+        self.switch_to_obj(7)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton8(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere8"
+    def execute(self, context):
+        self.switch_to_obj(8)
+        return{'FINISHED'}
+
+class OBJECT_OT_SelectExistingSphereButton9(OBJECT_OT_SelectExistingSphereButtonParent):
+    bl_idname = "select.sphere9"
+    def execute(self, context):
+        self.switch_to_obj(9)
+        return{'FINISHED'}
+
+class OBJECT_OT_DefaultLocRotScaleButton(bpy.types.Operator):
+    # """
+    # Button for adding a positioning sphere.
+    # """
+    bl_idname = "default.locrotscale"
+    bl_label = "Fix (Move) Mesh Position"
+
+    def execute(self, context):
+        """
+        Moves the mesh as appropriate.
         """
 
         obj = context.object
@@ -732,9 +1030,21 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
         except:
             pass
 
+        bpy.context.scene.objects.active.location.x = 0.0
+        bpy.context.scene.objects.active.location.y = 0.0
+        bpy.context.scene.objects.active.location.z = 0.0
+
+        bpy.context.scene.objects.active.rotation_euler.x = 0.0
+        bpy.context.scene.objects.active.rotation_euler.y = 0.0
+        bpy.context.scene.objects.active.rotation_euler.z = 0.0
+
+        bpy.context.scene.objects.active.scale.x = 1.0
+        bpy.context.scene.objects.active.scale.y = 1.0
+        bpy.context.scene.objects.active.scale.z = 1.0
+
         # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
         # add sphere at a default location unless optional user input provided
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, size=8.0, view_align=False, enter_editmode=False, location=(-30, -85, 397), rotation=(0.0, 0.0, 0.0))
+        #bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, size=8.0, view_align=False, enter_editmode=False, location=(-30, -85, 397), rotation=(0.0, 0.0, 0.0))
         # be able to change size of sphere
         # make sphere more transparent?
         # menu select and edit a sphere already added
@@ -742,23 +1052,26 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
 
         return{'FINISHED'}
 
-class OBJECT_OT_FinalizeButton(bpy.types.Operator):
-    # """
-    # Finalize button for removing all positioning spheres.
-    # """
-    bl_idname = "finalize.spheres"
-    bl_label = "Select Region (This Button Needs to Be in Row Above...)"
-
-    def execute(self, context):
-        """
-        Removes all positioning spheres.
-        """
-
-        # delete all objects beginning with "pruning_sphere"
-        return{'FINISHED'}
 
 # store keymaps here to access after registration
 addon_keymaps = []
+classes_used = [
+    OBJECT_OT_DisplayButton,
+    OBJECT_OT_AddSphereButton,
+    OBJECT_OT_DefaultLocRotScaleButton,
+    OBJECT_OT_SphereDoneButton,
+    OBJECT_OT_SelectExistingSphereButton0,
+    OBJECT_OT_SelectExistingSphereButton1,
+    OBJECT_OT_SelectExistingSphereButton2,
+    OBJECT_OT_SelectExistingSphereButton3,
+    OBJECT_OT_SelectExistingSphereButton4,
+    OBJECT_OT_SelectExistingSphereButton5,
+    OBJECT_OT_SelectExistingSphereButton6,
+    OBJECT_OT_SelectExistingSphereButton7,
+    OBJECT_OT_SelectExistingSphereButton8,
+    OBJECT_OT_SelectExistingSphereButton9,
+    OBJECT_OT_DeleteSphereButton
+]
 
 ##### Registration functions #####
 def register():
@@ -768,9 +1081,10 @@ def register():
     Mineral.start()
     bpy.utils.register_class(Mineral)
     bpy.types.VIEW3D_MT_object.append(menu_func)
-    bpy.utils.register_class(OBJECT_OT_DisplayButton)
-    bpy.utils.register_class(OBJECT_OT_AddSphereButton)
-    bpy.utils.register_class(OBJECT_OT_FinalizeButton)
+
+    global classes_used
+    for c in classes_used:
+        bpy.utils.register_class(c)
 
     # # handle the keymap
     # wm = bpy.context.window_manager
@@ -788,9 +1102,10 @@ def unregister():
 
     bpy.utils.unregister_class(Mineral)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
-    bpy.utils.unregister_class(OBJECT_OT_DisplayButton)
-    bpy.utils.unregister_class(OBJECT_OT_AddSphereButton)
-    bpy.utils.unregister_class(OBJECT_OT_FinalizeButton)
+
+    global classes_used
+    for c in classes_used:
+        bpy.utils.unregister_class(c)
 
     # # handle the keymap
     # wm = bpy.context.window_manager
