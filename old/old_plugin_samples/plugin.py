@@ -427,11 +427,9 @@ class GoatsAreGreat(PanelParentClass):
         obj = context.object
         if obj['is_goat_great'] == False:
             msg = "False! All goats, great in their own way."
-            print(msg)
             obj['user_opinion'] = msg
         else:
             msg = "You get the greatness of goats!"
-            print(msg)
             obj['user_opinion'] = msg
 
 ##### Custom operators #####

@@ -3,400 +3,39 @@ except: from io import StringIO
 
 import scoria
 import numpy
-import json
 import mathutils
 import bpy
 from bpy import context
-from bpy.props import *
 from mathutils import Vector
-import time
+import os
+
+try: 
+    import imp
+    imp.reload(DurBlend)
+except: pass
+
+from DurBlend import Properties
+from DurBlend import UI
+from DurBlend import PanelParentClass
+from DurBlend import ButtonParentClass
+from DurBlend import Messages
+
+plugin_name = "Mineral"
 
 bl_info = {
-    "name": "Mineral",
+    "name": plugin_name,
     "author" : "Name <name@example.com>",
     "version" : (1, 0, 0),
     "blender" : (2, 5, 7),
     "location" : "View 3D > ",
-    "description" : "Mineral",
+    "description" : plugin_name + " plugin",
     "warning" : "",
     "wiki_url" : "",
     "tracker_url" : "",
     "category": "Object",
 }
 
-##### Setup scene and object variables #####
-def nothing(self, context):
-    """
-    This is a function that does nothing.
-    """
-    return
-
-class Properties:
-    """
-    This class contains functions that easily define the properties controlled
-    by a given widget. These properties can be seen as typed variables with
-    associated descriptions. For example, suppose you want to have a checkbox
-    in your widget to indicate whether or not fainting goats are awesome. That
-    would be a boolean, so the property could be defined using the boolProp
-    definition in this class.
-    """
-
-    def intProp(self, txt, min=-100, max=100, default=33, update=nothing):
-        """
-        Define an integer property.
-
-        :param str txt: A prompt to let the user know what the property is
-                   for. For example, "How many fainting goats are there?"
-
-        :param int min: The minimum value this property can have. Defaults to
-                   -100.
-
-        :param int min: The maximum value this property can have. Defaults to
-                   100.
-
-        :param int default: The default value of this property. Defaults
-                   to 33.
-
-        :param func update: The function to execute when this value is
-                    updated. Defaults to the nothing function defined above,
-                    which does nothing.
-
-        :returns: a dictionary with the specified values.
-        :rtype: :class:`str`  # What is this line?
-        """
-
-        return IntProperty(
-            name=txt,
-            min=min, max=max,
-            default=default,
-            description="An integer between " + str(min) + " and " + str(max),
-            update=update
-        )
-
-    # MAKE FLOAT VECTOR PROPERTY
-    # def intVectorProp(self, txt, min=(-1000, -1000, -1000), max=(1000, 1000, 1000), default=(0, 0, 0), subtype='NONE', size=3, update=nothing):
-    #     """
-    #     Define an integer vector property.
-
-    #     :param str txt: A prompt to let the user know what the property is
-    #                for. For example, "How many fainting goats are there?"
-
-    #     :param int min: The minimum value this property can have. Defaults to
-    #                -100.
-
-    #     :param int min: The maximum value this property can have. Defaults to
-    #                100.
-
-    #     :param int default: The default value of this property. Defaults
-    #                to 33.
-
-    #     :param func update: The function to execute when this value is
-    #                 updated. Defaults to the nothing function defined above,
-    #                 which does nothing.
-
-    #     :returns: a dictionary with the specified values.
-    #     :rtype: :class:`str`  # What is this line?
-    #     """
-
-    #     return IntVectorProperty(
-    #         name=txt,
-    #         min=min, max=max,
-    #         default=default,
-    #         subtype=subtype,
-    #         size=size,
-    #         description="A vector between " + str(min) + " and " + str(max),
-    #         update=update
-    #     )
-
-    def floatProp(self, txt, min=-100.0, max=100.0, default=33.0, update=nothing):
-        """
-        Define a float property.
-
-        :param str txt: A prompt to let the user know what the property is
-                   for. For example, "How many fainting goats are there,
-                   including fractional goats?"
-
-        :param int min: The minimum value this property can have. Defaults to
-                   -100.0.
-
-        :param int min: The maximum value this property can have. Defaults to
-                   100.0.
-
-        :param int default: The default value of this property. Defaults
-                   to 33.0.
-
-        :param func update: The function to execute when this value is
-                    updated. Defaults to the nothing function defined above,
-                    which does nothing.
-
-        :returns: a dictionary with the specified values.
-        :rtype: :class:`str`  # What is this line?
-        """
-
-        return FloatProperty(
-            name=txt,
-            min=min, max=max,
-            default=default,
-            description="A float between " + str(min) + " and " + str(max),
-            update=update
-        )
-
-    def boolProp(self, txt, default=True, update=nothing):
-        """
-        Define a boolean property.
-
-        :param str txt: A prompt to let the user know what the property is
-                   for. For example, "Are fainting goats great?"
-
-        :param bool default: The default value of this property. Defaults
-                    to True.
-
-        :param func update: The function to execute when this value is
-                    updated. Defaults to the nothing function defined above,
-                    which does nothing.
-
-        :returns: a dictionary with the specified values.
-        :rtype: :class:`str`  # What is this line?
-        """
-
-        return BoolProperty(
-            name=txt,
-            default=default,
-            description="True or false",
-            update=update
-        )
-
-    def strProp(self, txt, default="", subtype='NONE', update=nothing):
-        """
-        Define a string property.
-
-        :param str txt: A prompt to let the user know what the property is
-                   for. For example, "Type in the name of your favorite
-                   fainting goat."
-
-        :param str default: The default value of this property. Defaults
-                    to "".
-
-        :param func update: The function to execute when this value is
-                    updated. Defaults to the nothing function defined above,
-                    which does nothing.
-
-        :returns: a dictionary with the specified values.
-        :rtype: :class:`str`  # What is this line?
-        """
-
-        return StringProperty(
-            name=txt,
-            default=default,
-            description="Text",
-            subtype=subtype,
-            update=update
-        )
-
-    def enumProp(self, txt, items=[("moose", "Moose", ""), ("dog", "Dog", "")], update=nothing):
-        """
-        Define an enumerated property.
-
-        :param str txt: A prompt to let the user know what the property is
-                   for. For example, "Which of these is a king of goat?"
-
-        :param ??? items: A list of tuples. Each tuple represents an option.
-                   The first item in the tuple is the option name. The second
-                   item is the option name in a more human-readable format.
-                   The third item is the value if this option is selected.
-
-        :param func update: The function to execute when this value is
-                    updated. Defaults to the nothing function defined above,
-                    which does nothing.
-
-        :returns: a dictionary with the specified values.
-        :rtype: :class:`str`  # What is this line?
-        """
-
-        return EnumProperty(
-            name=txt,
-            #default = items[0],
-            description="Select Option",
-            update=update,
-            items=items
-        )
-
-##### Class for drawing UI elements #####
-class UI:
-    """
-    This class contains functions to make it easier to layout the user
-    interface of a blender addon panel.
-    """
-
-    row_context = None
-    parent = None
-
-    def use_layout_row(self):
-        """
-        Tells the UI to use a layout row rather than a box row. The following
-        widgets (rows) are not grouped in a box, and a group label isn't added
-        by default.
-        """
-
-        self.row_context = self.parent.layout
-
-    def use_box_row(self, label_txt):
-        """
-        Tells the UI to use a box row rather than a layout row. The widgets
-        (rows) that follow are grouped in a box. A group title is added.
-
-        :param str label_txt: The group title.
-        """
-
-        box = self.parent.layout.box()
-        box.label(label_txt)
-        self.row_context = box
-
-    def new_row(self):
-        """
-        Start a new row. Whether it is a layout row or a box row depends on
-        whether use_box_row() or use_layout_row() was called (above).
-        """
-
-        row = self.row_context.row(align=True)
-        row.alignment = "EXPAND"
-        return row
-
-    def label(self, txt="Label Text"):
-        """
-        Add a simple text label to the current row.
-
-        :param str txt: The label. Defaults to "Label Text".
-        """
-
-        row = self.new_row()
-        row.label(text=txt)
-
-    def object_property(self, property_name="location"):
-        """
-        Add a widget to the addon that controls a given object. How do you
-        know if this widget will serve an intger, float, boolean, etc.
-        property? That is specified in the associated property data, set using
-        the functions of the Properties class.
-
-        :param str property_name: The name of the property. With this name,
-                   the code will look up the original Property type and will
-                   add the appropriate widget to your addon.
-        """
-
-        row = self.new_row()
-        row.prop(self.parent.obj, property_name)
-
-    def scene_property(self, property_name="location"):
-        """
-        Add a widget to the addon that controls some aspect of the entire
-        scene. How do you know if this widget will serve an intger, float,
-        boolean, etc. property? That is specified in the associated property
-        data, set using the functions of the Properties class.
-
-        :param str property_name: The name of the property. With this name,
-                   the code will look up the original Property type and will
-                   add the appropriate widget to your addon.
-        """
-
-        row = self.new_row()
-        row.prop(self.parent.scene, property_name)
-
-    def ops_button(self, rel_data_path="object.modifier_add", button_label="Add Modifier!"):
-        """
-        Add a button to your widget. Use this button when you want to do
-        something simple, without passing any additional actions (which are
-        like parameters to get a given functionality to do something more
-        specific that what is generic).
-
-        So, for example, if you want to select/deselect all the objects in
-        your scene, you could use this button with the rel_data_path set to
-        "object.select_all".
-
-        :param str rel_data_path: A string specifiying what this button should
-                   do.
-
-        :param str button_label: The text of the button.
-        """
-
-        # Note that rel_data_path does not include bpy.ops.
-        # So instead of bpy.ops.object.modifier_add, just object.modifier_add
-        row = self.new_row()
-        row.operator(rel_data_path, text=button_label) #, icon='FILESEL')
-
-    def ops_action_button(self, rel_data_path="object.select_all", button_label="Invert Selection!", action="INVERT"):
-        """
-        Add a button to your widget. Use this button when you want to do
-        something beyond generic functionality (i.e., when you need to use an
-        "action", which is like a parameter to get a given functionality to do
-        something more specific that what is generic).
-
-        So, for example, if you want to invert the current selection, setting
-        the rel_data_path set to "object.select_all" won't do. You
-        additionally need to use the "INVERT" action.
-
-        :param str rel_data_path: A string specifiying what this button should
-                   do.
-
-        :param str button_label: The text of the button.
-
-        :param str action: The action to perform when the button is pressed.
-        """
-
-        row = self.new_row()
-        row.operator(rel_data_path, text=button_label).action = action
-
-class PanelParentClass(bpy.types.Panel):
-    """
-    This class is the parent class of any widget-specific panel class you
-    might make. Don't change this class, but change a class of your own that
-    inherits this one.
-    """
-
-    # All panels will have associated objects and an associated scene. Obj is
-    # the last object selected. So obj.name, for example, is its name. The
-    # value shown in your widget will update automatically (you don't need to
-    # explicitly draw it yourself because the draw function is called
-    # frequently).
-    obj = None
-    scene = None
-
-    # All panels will have associated properties and a user interface, so make
-    # those here.
-    prop_funcs = Properties()
-    ui = UI()
-
-    @classmethod
-    def start(self):
-        """
-        This function is called when your panel is created. Every panel must
-        have one. In this case, it just calls setup_properties(), which you
-        define in your Panel class. I'm keeping these separate in case in the
-        future we need to make sure some code is run when initializing any
-        panels.
-
-        Note that setup_properties() must be a classmethod. It's a place where
-        you define all the properties for your panel (see example below).
-        """
-
-        self.setup_properties()
-
-    @classmethod
-    def setup_properties(self):
-        """
-        This function should be overwritten in your child class. It's a place
-        where you define all the properties for your panel (see example
-        below).
-        """
-
-        assert False, "You need to define a setup_properties() definition in your own Panel class!"
-
-    def set_class_variables(self, context):
-        self.obj = context.object
-        self.scene = bpy.context.scene
-        self.ui.parent = self
-
-
+###### Below specific to this plugin ######
 class Mineral(PanelParentClass):
     """Mineral"""
     bl_label = "Mineral"
@@ -431,9 +70,6 @@ class Mineral(PanelParentClass):
         # Need a float vector property to input atom coordinates
         # How do we make it possible to enter more coordinates if desired?
 
-        global messages
-        messages = {}
-
     def draw(self, context):
         """
         Every panel class must have a draw function. It gets called over and
@@ -446,7 +82,7 @@ class Mineral(PanelParentClass):
         :param ??? context: The context of the currently selected object.
         """
 
-        global messages
+        global plugin_name
 
         self.set_class_variables(context)
 
@@ -455,26 +91,43 @@ class Mineral(PanelParentClass):
         if obj_to_use is None:
             obj_to_use = bpy.context.scene.objects.active
         
+        # First consider possibility that nothing is selected/active.
+        mesh_not_selected = False
+        if obj_to_use is None:
+            # Nothing active
+            mesh_not_selected = True
+        if mesh_not_selected == False:
+            currently_selected = [obj for obj in bpy.data.objects if obj.select == True]
+            if len(currently_selected) != 1:
+                mesh_not_selected = True
+        if mesh_not_selected == True:
+            self.ui.use_box_row("Instructions")
+            self.ui.label("Select protein object in 3D viewer to begin.")
+            
+            self.ui.use_box_row("Clear Existing")
+            self.ui.label("Click to clear exiting animations. Start over.")
+
+            self.ui.use_box_row("Citation")
+            self.ui.label("If you use " + plugin_name + ", please cite:")
+            self.ui.label("{FULL CITATION HERE}")
+            return
+
         # What object name to use?
         obj_to_use_name = obj_to_use.name if not obj_to_use.name.startswith("highres_sphere__") else obj_to_use.name.split("__")[1]
 
-        # Show the name
         if obj_to_use.name.startswith("highres_sphere__"):
             # It's one of the selection spheres...
             self.ui.use_layout_row()
-            self.ui.label("Create New High-Detail Region")
+            self.ui.label("High-Detail Region")
+            self.ui.use_box_row("Properties")
             self.ui.label("Move/scale the sphere to encompass the region.")
             self.ui.object_property(property_name="sphere_pruning_stride")
-
-            if "SPHERE_STRIDE_TOO_HIGH" in messages:
-                msg = messages["SPHERE_STRIDE_TOO_HIGH"]
-                if (int(time.time()) - msg["time"] < 5.0):
-                    self.ui.label(msg["msg"])
-                else:
-                    del messages["SPHERE_STRIDE_TOO_HIGH"]
+            Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
+            self.ui.use_box_row("Finalize")
             self.ui.ops_button(rel_data_path="backto.protein", button_label="Back to Protein Mesh")
             self.ui.ops_button(rel_data_path="delete.region", button_label="Delete Region")
         else:
+            # Show the name
             self.ui.use_layout_row()
             self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
 
@@ -514,19 +167,16 @@ class Mineral(PanelParentClass):
                     self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
 
                 # cursor_3d_msg = "To create new, position 3D cursor and..."
-                if "SELECT_SPHERE" in messages:
-                    msg = messages["SELECT_SPHERE"]
-                    if (int(time.time()) - msg["time"] < 5.0):
-                        self.ui.label(msg["msg"])
-                    else:
-                        del messages["SELECT_SPHERE"]
-            
+                Messages.display_message("SELECT_SPHERE", self)
                 self.ui.ops_button(rel_data_path="add.sphere", button_label="Create Region")
 
-                self.ui.new_row()
+                # self.ui.new_row()
+                # self.ui.use_layout_row()
 
-                self.ui.use_layout_row()
-                self.layout.operator("protein.display")
+                self.ui.use_box_row("Finalize")
+                self.ui.label("WARNING: Loading simulation may take a bit.")
+                Messages.display_message("TRAJ_FILENAME_DOESNT_EXIST", self)
+                self.ui.ops_button(rel_data_path="load.traj", button_label="Load Trajectory")
 
                 self.ui.new_row()
 
@@ -669,7 +319,9 @@ def apply_prune(trajectory, kdtree, pruning_spheres):
         # # Save that mask
         # masks.append(mask)
 
-    total_indices_to_keep = numpy.array(list(total_indices_to_keep))
+    total_indices_to_keep = list(total_indices_to_keep)
+    total_indices_to_keep.sort()
+    total_indices_to_keep = numpy.array(total_indices_to_keep)
 
     # Now go through each of the points and decide whether or not to keep
     # # it.
@@ -763,12 +415,12 @@ def make_bones_from_molecules(trajectory, frame_stride):
 def menu_func(self, context):
     self.layout.operator(Mineral.bl_idname)
 
-class OBJECT_OT_DisplayButton(bpy.types.Operator):
+class OBJECT_OT_LoadTrajButton(ButtonParentClass):
     """
     Button for displaying basic pruned protein.
     """
-    bl_idname = "protein.display"
-    bl_label = "Load Dynamics"
+    bl_idname = "load.traj"
+    bl_label = "Load Trajectory"
 
     def __init__(self):
         self.trajectory = None
@@ -784,30 +436,35 @@ class OBJECT_OT_DisplayButton(bpy.types.Operator):
 
         obj = context.object
 
-        self.frame_stride = obj.frame_stride
-        self.overall_pruning_stride = obj.overall_pruning_stride
-        self.trajectory = load_pdb_trajectory(obj.pdb_filename, self.frame_stride)
+        # Check to make sure filename exists
+        if not os.path.exists(obj.pdb_filename):
+            Messages.send_message("TRAJ_FILENAME_DOESNT_EXIST", "ERROR: Trajectory filename doesn't exist!")
+        else:
+            # Trajectory filename does exist, so load it...
+            self.frame_stride = obj.frame_stride
+            self.overall_pruning_stride = obj.overall_pruning_stride
+            self.trajectory = load_pdb_trajectory(obj.pdb_filename, self.frame_stride)
 
-        # Add the pruning sphers
-        self.pruning_spheres = add_overall_pruning_stride(self.pruning_spheres, self.overall_pruning_stride)
-        
-        for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("highres_sphere__")]:
-            x, y, z = list(sphere.location)
-            r = 5 * sphere.scale.x  # Because radius is 5 at creation
-            stride = sphere.sphere_pruning_stride
-            self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, x, y, z, r, stride)
+            # Add the pruning sphers
+            self.pruning_spheres = add_overall_pruning_stride(self.pruning_spheres, self.overall_pruning_stride)
+            
+            for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("highres_sphere__")]:
+                x, y, z = list(sphere.location)
+                r = 5 * sphere.scale.x  # Because radius is 5 at creation
+                stride = sphere.sphere_pruning_stride
+                self.pruning_spheres = add_pruning_sphere(self.pruning_spheres, x, y, z, r, stride)
 
-        # Prune the trajectory
-        self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
+            # Prune the trajectory
+            self.trajectory = apply_prune(self.trajectory, self.kdtree, self.pruning_spheres)
 
-        make_bones_from_molecules(self.trajectory, self.frame_stride)
+            make_bones_from_molecules(self.trajectory, self.frame_stride)
 
-        try:
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
-        bpy.context.scene.objects.active = bpy.data.objects['Armature']
-        bpy.ops.view3d.view_selected(use_all_regions=False)
+            try:
+                bpy.ops.object.mode_set(mode='OBJECT')
+            except:
+                pass
+            bpy.context.scene.objects.active = bpy.data.objects['Armature']
+            bpy.ops.view3d.view_selected(use_all_regions=False)
 
         return{'FINISHED'}
 
@@ -816,7 +473,7 @@ def geometric_center(obj):
     global_bbox_center = obj.matrix_world * local_bbox_center
     return global_bbox_center
 
-class OBJECT_OT_AddSphereButton(bpy.types.Operator):
+class OBJECT_OT_AddSphereButton(ButtonParentClass):
     # """
     # Button for adding a positioning sphere.
     # """
@@ -827,8 +484,6 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
         """
         Adds a sphere to the scene.
         """
-
-        global messages
 
         obj = context.object
 
@@ -874,14 +529,10 @@ class OBJECT_OT_AddSphereButton(bpy.types.Operator):
             # menu select and edit a sphere already added
             # command to grab object and position (or select object and press G): bpy.ops.transform.translate()
         else:
-            messages["SELECT_SPHERE"] = {
-                "msg": "ERROR: Click on protein mesh to position 3D cursor!",
-                "time": int(time.time())
-            }
-
+            Messages.send_message("SELECT_SPHERE", "ERROR: Click on protein mesh to position 3D cursor!")
         return{'FINISHED'}
 
-class OBJECT_OT_SphereDoneButton(bpy.types.Operator):
+class OBJECT_OT_SphereDoneButton(ButtonParentClass):
     # """
     # Finalize button for removing all positioning spheres.
     # """
@@ -898,11 +549,7 @@ class OBJECT_OT_SphereDoneButton(bpy.types.Operator):
 
         # Make sure sphere pruning is less than whole protein pruning
         if protein_mesh.overall_pruning_stride < obj.sphere_pruning_stride:
-            messages["SPHERE_STRIDE_TOO_HIGH"] = {
-                "msg": "ERROR: Value too big. Set <= " + str(protein_mesh.overall_pruning_stride) + " (general value).",
-                "time": int(time.time())
-            }
-
+            Messages.send_message("SPHERE_STRIDE_TOO_HIGH", "ERROR: Value too big. Set <= " + str(protein_mesh.overall_pruning_stride) + " (general value).")
         else:
             for obj in bpy.data.objects: obj.select = False
 
@@ -911,7 +558,7 @@ class OBJECT_OT_SphereDoneButton(bpy.types.Operator):
         
         return{'FINISHED'}
 
-class OBJECT_OT_DeleteSphereButton(bpy.types.Operator):
+class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
     # """
     # Finalize button for removing all positioning spheres.
     # """
@@ -937,7 +584,7 @@ class OBJECT_OT_DeleteSphereButton(bpy.types.Operator):
 
         return{'FINISHED'}
 
-class OBJECT_OT_SelectExistingSphereButtonParent(bpy.types.Operator):
+class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
     # """
     # Select an existing sphere
     # """
@@ -1011,7 +658,7 @@ class OBJECT_OT_SelectExistingSphereButton9(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(9)
         return{'FINISHED'}
 
-class OBJECT_OT_DefaultLocRotScaleButton(bpy.types.Operator):
+class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
     # """
     # Button for adding a positioning sphere.
     # """
@@ -1056,7 +703,7 @@ class OBJECT_OT_DefaultLocRotScaleButton(bpy.types.Operator):
 # store keymaps here to access after registration
 addon_keymaps = []
 classes_used = [
-    OBJECT_OT_DisplayButton,
+    OBJECT_OT_LoadTrajButton,
     OBJECT_OT_AddSphereButton,
     OBJECT_OT_DefaultLocRotScaleButton,
     OBJECT_OT_SphereDoneButton,

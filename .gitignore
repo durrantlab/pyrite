@@ -2,3 +2,4 @@
        ignore. When you're done, type ":wq" and press enter.
 *.pyc
 .trkr.dat
+*.blend1
