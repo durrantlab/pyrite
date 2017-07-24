@@ -1,6 +1,6 @@
 import bpy
-from .Properties import Properties
-from .UI import UI
+from .properties import Properties
+from .ui import UI
 
 class PanelParentClass(bpy.types.Panel):
     """
