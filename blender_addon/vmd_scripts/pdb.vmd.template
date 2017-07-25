@@ -55,14 +55,14 @@ foreach chain $uniq_chains {
 
   # Protein residues near ligand
   mol delrep 0 top
-  mol selection "(not name N O C) and (same residue as (protein within 8 of ((chain A) and (not protein and not water) and not ((not element N C O P S Se Cl Br F) and mass > 16) and (not resname MSE))))"
+  mol selection "(not name N O C) and (same residue as (protein within 8 of ((chain $chain) and (not protein and not water) and not ((not element N C O P S Se Cl Br F) and mass > 16) and (not resname MSE))))"
   mol representation Licorice 0.300000 20.000000 20.000000
   mol addrep top
   render Wavefront "{OUTPUT_DIR}/amino_acids_near_ligand_${chain}.obj"
   
   # Deal with heavy atoms
   mol delrep 0 top
-  mol selection "(not element N C O P S Se Cl Br F) and (mass > 16) and (not resname MSE)"
+  mol selection "(chain $chain) and (not element N C O P S Se Cl Br F) and (mass > 16) and (not resname MSE)"
   mol representation VDW 1.000000 12.000000
   mol addrep top
   render Wavefront "{OUTPUT_DIR}/ligand_${chain}_heavy_metals.obj"
