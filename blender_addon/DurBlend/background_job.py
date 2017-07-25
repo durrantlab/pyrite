@@ -9,7 +9,7 @@ class BackgroundJobParentClass(bpy.types.Operator):
 
     def modal(self, context, event):  # The main loop
         if event.type in {'ESC'}:
-            print("Cancel")
+            self.job_cancelled()
             return {'CANCELLED'}
         
         # First time, setup stuff.
@@ -20,7 +20,6 @@ class BackgroundJobParentClass(bpy.types.Operator):
         response = self.run_step(context, event)
         if response is not None:
             return response
-
 
         # return {'RUNNING_MODAL'}  # If you only want it to run when event fires
         return {'PASS_THROUGH'}
@@ -41,6 +40,11 @@ class BackgroundJobParentClass(bpy.types.Operator):
     #     bpy.ops.object.modal_operator('INVOKE_DEFAULT')
     #     self.setup(kwargs)
     
+
+    def job_cancelled(self):
+        # Overwritten by children
+        pass
+
     def setup(self, context, event):
         # Overwritten by children
         pass

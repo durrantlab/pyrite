@@ -8,6 +8,9 @@ import bpy
 from bpy import context
 from mathutils import Vector
 import os
+import tempfile
+import glob
+import shutil
 
 # try: 
 #     import imp
@@ -37,6 +40,8 @@ bl_info = {
 }
 
 ###### Below specific to this plugin ######
+currently_loading_traj = False
+
 class Mineral(PanelParentClass):
     """Mineral"""
     bl_label = "Mineral"
@@ -56,6 +61,8 @@ class Mineral(PanelParentClass):
 
         # Set up scene and object properties.
         bpy.types.Object.pdb_filename = self.prop_funcs.strProp("PDB file", "sample.pdb", 'FILE_PATH')
+        bpy.types.Object.vmd_executable = self.prop_funcs.strProp("VMD binary", "vmd.bin", 'FILE_PATH')
+        bpy.types.Object.vmd_source_file = self.prop_funcs.strProp("PDB / state file", "*.pdb, *.vmd", 'FILE_PATH')
         bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every n frames", 1, 100, 2)
         
         bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 5)
@@ -84,7 +91,8 @@ class Mineral(PanelParentClass):
         """
 
         global plugin_name
-
+        global currently_loading_traj
+        
         self.set_class_variables(context)
 
         # Pick the object
@@ -92,7 +100,14 @@ class Mineral(PanelParentClass):
         if obj_to_use is None:
             obj_to_use = bpy.context.scene.objects.active
         
-        # First consider possibility that nothing is selected/active.
+        # Consider the possibility that a trajectory is being loaded...
+        if currently_loading_traj:
+            self.ui.use_box_row("Loading Trajectory")
+            Messages.display_message("LOAD_TRAJ_PROGRESS", self)
+            self.ui.label("Press Esc to stop loading...")
+            return
+
+        # Consider possibility that nothing is selected/active.
         mesh_not_selected = False
         if obj_to_use is None:
             # Nothing active
@@ -103,18 +118,30 @@ class Mineral(PanelParentClass):
                 mesh_not_selected = True
         if mesh_not_selected == True:
             self.ui.use_box_row("Instructions")
-            self.ui.label("Select protein object in 3D viewer to begin.")
             
-            previous_run_exists = False
-            for obj in bpy.data.objects:
-                if obj.name.startswith(plugin_name + "_"):
-                    previous_run_exists = True
-                    break
+            if bpy.context.scene.objects.active == None:
+                # self.ui.use_box_row("Select an Object")
+                self.ui.label("Select an object for additional options.")
+            else:
+                self.ui.label("1) Load protein models, perhaps via VMD.")
+                self.ui.label("2) Select protein object in 3D viewer.")
 
-            if previous_run_exists:
-                self.ui.use_box_row("Previous Runs")
-                self.ui.ops_button(rel_data_path="remove.animations", button_label="Remove Animations")
-                self.ui.ops_button(rel_data_path="start.over", button_label="Start Over")
+                self.ui.use_box_row("Load VMD File")
+                self.ui.object_property(property_name="vmd_executable")
+                self.ui.object_property(property_name="vmd_source_file")
+                Messages.display_message("LOAD_VMD_FILE_MSG", self)
+                self.ui.ops_button(rel_data_path="load.vmd_file", button_label="Load VMD File")
+                
+                previous_run_exists = False
+                for obj in bpy.data.objects:
+                    if obj.name.startswith(plugin_name + "_"):
+                        previous_run_exists = True
+                        break
+
+                if previous_run_exists:
+                    self.ui.use_box_row("Previous Runs")
+                    self.ui.ops_button(rel_data_path="remove.animations", button_label="Remove Animations")
+                    self.ui.ops_button(rel_data_path="start.over", button_label="Start Over")
 
             self.ui.use_box_row("Citation")
             self.ui.label("If you use " + plugin_name + ", please cite:")
@@ -139,7 +166,7 @@ class Mineral(PanelParentClass):
             # Show the name
             self.ui.use_layout_row()
             self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
-
+            self.ui.ops_button(rel_data_path="main.menu", button_label="Return to Main Menu")
             # It's not a selection sphere. Must be a mesh.
             # Check if the location of the object is ok.
             loc = [round(v, 1) for v in list(obj_to_use.location)]
@@ -158,12 +185,12 @@ class Mineral(PanelParentClass):
             else:
                 # The location is ok, so show normal ui
                 self.ui.use_box_row("Load a Protein Trajectory")
-                self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
+                # self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
                 self.ui.object_property(property_name="pdb_filename")
                 self.ui.new_row()
 
                 self.ui.use_box_row("Simplify Trajectory")
-                self.ui.label("Keep only some frames and atoms. Saves memory.")
+                # self.ui.label("Keep only some frames and atoms. Saves memory.")
                 self.ui.object_property(property_name="frame_stride")
                 self.ui.object_property(property_name="overall_pruning_stride")
                 self.ui.new_row()
@@ -189,41 +216,6 @@ class Mineral(PanelParentClass):
 
                 self.ui.new_row()
 
-        # if obj_to_use.name.startswith("highres_sphere__"):
-        #     # obj_to_use = bpy.data.objects[obj_to_use.name.split("__")[1]]
-        #     obj_to_use_name = obj_to_use.name.split("__")[1]
-
-def load_pdb_trajectory(pdb_filename, frame_stride):
-    """
-    Loads molecule trajectory from a given PDB file into a numpy array.
-    Keeps every certain number of frames in array based on user-inputted value.
-
-    Args:
-    pdb_filename (string): The name of a PDB file (including '.pdb').
-    frame_stride (integer): The stride for frames to keep.
-
-    Returns:
-
-    """
-    obj = context.object
-
-    print("Loading PDB trajectory: " + pdb_filename)
-    pdb_filename = pdb_filename
-    frame_stride = frame_stride
-
-    # Load the trajectory
-    trajectory = scoria.Molecule()
-    trajectory.load_pdb_trajectory_into(pdb_filename, bonds_by_distance = False, serial_reindex = False, resseq_reindex = False)
-
-    # Delete every frame_stride frames.
-    # print("Keeping only every " + str(frame_stride) + " frames...")
-    # frame_indices = numpy.array(range(trajectory.get_trajectory_frame_count()))
-    # frame_indices_to_keep = frame_indices[::frame_stride]
-    # frame_indices_to_delete = numpy.setdiff1d(frame_indices, frame_indices_to_keep)
-    # for idx in frame_indices_to_delete[::-1]:
-    #     trajectory.delete_trajectory_frame(idx)
-    return trajectory
-
 def menu_func(self, context):
     self.layout.operator(Mineral.bl_idname)
 
@@ -244,6 +236,7 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
         """
         What should be run when the display button is pressed.
         """
+        global currently_loading_traj
 
         obj = context.object
 
@@ -256,25 +249,8 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
             # Trajectory filename does exist, so load it...
             self.frame_stride = obj.frame_stride
             self.overall_pruning_stride = obj.overall_pruning_stride
-            # self.trajectory = load_pdb_trajectory(obj.pdb_filename, self.frame_stride)
-
-            #runit = ProcessTrajectory()
-            #runit.start(pdb_filename=obj.pdb_filename, frame_strude=self.frame_stride)  # *****
-            #context.layout.operator("process.trajectory")
+            currently_loading_traj = True
             bpy.ops.process.trajectory('INVOKE_DEFAULT')
-            return{'FINISHED'}
-
-
-            # Prune the trajectory
-            
-
-            # Zoom in on armature
-            try:
-                bpy.ops.object.mode_set(mode='OBJECT')
-            except:
-                pass
-            bpy.context.scene.objects.active = bpy.data.objects[plugin_name + '_Armature']
-            bpy.ops.view3d.view_selected(use_all_regions=False)
 
         return{'FINISHED'}
 
@@ -536,12 +512,31 @@ class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
 
         return{'FINISHED'}
 
+
+class OBJECT_OT_SetActive(ButtonParentClass):
+    # """
+    # Button for adding a positioning sphere.
+    # """
+    bl_idname = "set.active"
+    bl_label = "Set Active"
+
+    def execute(self, context):
+        """
+        Moves the mesh as appropriate.
+        """
+
+        bpy.context.scene.objects.active = bpy.data.objects[0]
+
+        return{'FINISHED'}
+
+
+
 class ProcessTrajectory(BackgroundJobParentClass):
     bl_idname = "process.trajectory"
 
     def setup(self, context, event):
         self.overall_pruning_stride = context.object.overall_pruning_stride
-        self.current_step = "LOAD_FRAME"
+        self.current_step = "START"
         self.current_frame = None
         self.pruning_spheres = []
         self.selection_atoms_to_keep_with_offset = {}
@@ -554,24 +549,37 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.protein_obj = bpy.context.scene.objects.active
 
     def run_step(self, context, event):
+        if self.current_step == "START":
+            self.current_frame = next(self.frames)
+            Messages.send_message("LOAD_TRAJ_PROGRESS", "Identifying which atoms to keep...")
+            self.current_step = "ID_ATOMS"
+        elif self.current_step == "ID_ATOMS":
+            self.get_pruned_indecies()
+            self.add_empties_at_atom_points()
+            Messages.send_message("LOAD_TRAJ_PROGRESS", "Loading frame 1...")
+            self.current_step = "POSITION_EMPTIES"
         if self.current_step == "LOAD_FRAME":
             try:
                 self.current_frame = next(self.frames)
-
-                # If it's the first frame, get the pruning indecies
-                if self.frame_index == 0:
-                    self.get_pruned_indecies()
-                    self.add_empties_at_atom_points()
-
-                self.current_step = "PLACE_BONES"
+                Messages.send_message("LOAD_TRAJ_PROGRESS", "Loading frame " + str(self.frame_index + 1) + "...")
+                self.current_step = "POSITION_EMPTIES"
                 return None
             except StopIteration:
-                self.armature_and_bones()
-                return {'CANCELLED'}
-        elif self.current_step == "PLACE_BONES":
-            self.make_bones_from_molecules()
+                self.position_empties_at_atom_locs(position_all=True)
+                Messages.send_message("LOAD_TRAJ_PROGRESS", "Setting up armature and bones...")
+                self.current_step = "ARMATURE"
+        elif self.current_step == "POSITION_EMPTIES":
+            self.position_empties_at_atom_locs()
             self.frame_index = self.frame_index + 1
             self.current_step = "LOAD_FRAME"
+        elif self.current_step == "ARMATURE":
+            self.armature_and_bones()
+            return {'CANCELLED'}
+    
+    def job_cancelled(self):
+        global currently_loading_traj
+        bpy.ops.remove.animations('INVOKE_DEFAULT')
+        currently_loading_traj = False
 
     def get_frames(self):
         current_frame = 0
@@ -691,7 +699,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         for i in range(self.frame_stride):
             self.selection_atoms_to_keep_with_offset[i] = total_indices_to_keep[i::self.frame_stride]
 
-    def make_bones_from_molecules(self):
+    def position_empties_at_atom_locs(self, position_all=False):
         """
         """
         try:  # So dumb that blender throws an error if it's already in object mode...
@@ -701,27 +709,9 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         global plugin_name
 
-        # protein_obj = bpy.context.scene.objects.active
-
-        # Actually prune the molecule.
-        # print(sel)
-        # self.current_frame = self.current_frame.get_molecule_from_selection(sel)
-
-        # Now go through the frames and position those empties
-        # tot = self.current_frame.get_trajectory_frame_count()
-        # for frame_index in range(0, tot):
-
         bpy.context.scene.frame_set(self.frame_index)  # Sets next frame to add
 
-        # offset_index = frame_index % self.frame_stride  # To stagger keyframes
-
-        # for coor_index, coor in enumerate(self.current_frame.get_coordinates(frame=frame_index)):
-        #     if coor_index % self.frame_stride == offset_index or frame_index == 0 or frame_index == tot - 1:  # To stagger key frames
-        #         empty = bpy.data.objects[plugin_name + "_empty" + str(coor_index)]
-        #         empty.location = coor - geo_center
-        #         empty.keyframe_insert(data_path='location')
-
-        if self.frame_index == 0:
+        if self.frame_index == 0 or position_all == True:
             sel = self.selection_atoms_to_keep
         else:
             sel = self.selection_atoms_to_keep_with_offset[self.frame_index % self.frame_stride]
@@ -736,6 +726,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
     def armature_and_bones(self):
         global plugin_name
+        global currently_loading_traj
 
         # Creating armature
         bpy.ops.object.add(type='ARMATURE', enter_editmode=True)
@@ -773,7 +764,108 @@ class ProcessTrajectory(BackgroundJobParentClass):
         armature.select = True
         bpy.context.scene.objects.active = armature
         bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+
+        # Zoom in on armature
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+        bpy.context.scene.objects.active = bpy.data.objects[plugin_name + '_Armature']
+        bpy.ops.view3d.view_selected(use_all_regions=False)
+
+        # No longer running
+        currently_loading_traj = False
+
+class OBJECT_OT_MainMenuButton(ButtonParentClass):
+    # """
+    # Button for adding a positioning sphere.
+    # """
+    bl_idname = "main.menu"
+    bl_label = "Return to Main Menu"
+
+    def execute(self, context):
+        """
+        Moves the mesh as appropriate.
+        """
+
+        obj = context.object
+
+        try:  # So dumb that blender throws an error if it's already in object mode...
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+
+        for obj in bpy.data.objects:
+            obj.select = False
         
+        return {'FINISHED'}
+
+class OBJECT_OT_LoadVMDFileButton(ButtonParentClass):
+    # """
+    # Button for adding a positioning sphere.
+    # """
+    bl_idname = "load.vmd_file"
+    bl_label = "Load VMD File"
+
+    def execute(self, context):
+        """
+        Moves the mesh as appropriate.
+        """
+
+        obj = context.object
+
+        try:  # So dumb that blender throws an error if it's already in object mode...
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
+
+        if not os.path.exists(obj.vmd_executable):
+            Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD executable doesn't exist!")
+            return {'FINISHED'}
+        
+        if not os.path.exists(obj.vmd_source_file):
+            Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD file doesn't exist!")
+            return {'FINISHED'}
+
+        tmp_dir = tempfile.mkdtemp() + os.sep
+        vmd_script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + "vmd_scripts" + os.sep
+        vmd_source_file = os.path.abspath(obj.vmd_source_file)
+
+        if obj.vmd_source_file.upper().endswith("PDB"):
+            # It's a pdb file
+            open(tmp_dir + "vmd.vmd",'w').write(
+                open(vmd_script_dir + "pdb.vmd.template", 'r').read().replace(
+                    "{PDB_FILENAME}", vmd_source_file
+                ).replace(
+                    "{OUTPUT_DIR}", tmp_dir
+                )
+            )
+        else:
+            # It's a vmd state file.
+            open(tmp_dir + "vmd.vmd",'w').write(
+                "cd " + os.path.dirname(vmd_source_file) + "\n" +
+                open(vmd_source_file, 'r').read() + "\n" +
+                open(vmd_script_dir + "vmd.vmd.template", 'r').read().replace(
+                    "{OUTPUT_DIR}", tmp_dir
+                )
+            )
+        
+        os.system('"' + obj.vmd_executable + '"' + " -dispdev text -e " + tmp_dir + "vmd.vmd")
+
+        existing_obj_names = set([obj.name for obj in bpy.data.objects])
+        for filename in glob.glob(tmp_dir + "*.obj"):
+            bpy.ops.import_scene.obj(filepath=filename)
+        new_obj_names = set([obj.name for obj in bpy.data.objects]) - existing_obj_names
+
+        for obj_name in new_obj_names:
+            print(obj_name)
+            # Here process meshes to make better.
+
+        shutil.rmtree(tmp_dir)
+
+        print(tmp_dir)
+        
+        return {'FINISHED'}
 
 # store keymaps here to access after registration
 addon_keymaps = []
@@ -795,7 +887,10 @@ classes_used = [
     OBJECT_OT_DeleteSphereButton,
     OBJECT_OT_StartOver,
     OBJECT_OT_RemoveAnimations,
-    ProcessTrajectory
+    ProcessTrajectory,
+    OBJECT_OT_MainMenuButton,
+    OBJECT_OT_LoadVMDFileButton,
+    OBJECT_OT_SetActive
 ]
 
 ##### Registration functions #####
