@@ -1,5 +1,8 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
-from scoria import dumbpy as numpy
+from . import dumbpy as numpy
 from .six.moves import range
 import copy
 

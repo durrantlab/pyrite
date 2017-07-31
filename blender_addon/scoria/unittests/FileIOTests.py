@@ -1,12 +1,18 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
 import unittest
 import os
 import sys
 import shutil
 
-import numpy as np
-import scipy
-import MDAnalysis
+#import numpy as np
+from scoria import dumbpy as np
+
+try: import MDAnalysis  # pypy shouldn't be able to load this.
+except: pass
+
 import scoria
 import shutil
 
@@ -58,7 +64,7 @@ class FileIOTests(unittest.TestCase):
         self.assertEqual(self.mol.get_total_number_of_atoms(), 401)
         self.assertEqual(self.mol.get_remarks(), [' This is a remark.'])
 
-    @unittest.skip("Needs  multiframe pdbqt")
+    @unittest.skip("Needs multiframe pdbqt")
     def test_load_pdbqt_trajectory_into(self):
         """
         Testing the ability of the FileIO module to import pdbqt trajectories
@@ -66,7 +72,7 @@ class FileIOTests(unittest.TestCase):
         """
         self.mol.load_pdbqt_trajectory_into(self.info_path + '')
 
-    @unittest.skip("Needs  multiframe pdbqt")
+    @unittest.skip("Needs multiframe pdbqt")
     def test_load_pdbqt_trajectory_into_using_file_object(self):
         """
         Testing the ability of the FileIO module to import pdbqt trajectories
@@ -164,7 +170,6 @@ class FileIOTests(unittest.TestCase):
                          ['     Created by DCD plugin\x00',
                           '     \x00\x00\x00REMARKS Created 03 January, 2017 at'])
 
-
     def test_load_MDAnalysis_into_using_universe_object(self):
         """
         Empty test.
@@ -199,10 +204,15 @@ class FileIOTests(unittest.TestCase):
         """
         Empty test.
         """
-        input_name = self.info_path + 'file_io_test.pym'
+
+        # Don't use pym file here. It's not compatible with pypy.
+        #input_name = self.info_path + 'file_io_test.pym'
+        #self.mol.load_pym_into(input_name)
+
+        input_name = self.info_path + 'single_frame.pdb'
         self.output_name = 'output.pdb'
 
-        self.mol.load_pym_into(input_name)
+        self.mol.load_pdb_into(input_name)
         self.mol.save_pdb(self.output_name)
 
         self.assertTrue(os.path.exists(self.output_name))

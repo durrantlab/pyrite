@@ -1,7 +1,10 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-from scoria import dumbpy as numpy
-from scoria.Quaternion import Quaternion
+from . import dumbpy as numpy
+from . import Quaternion
 
 
 class OtherMolecules():
@@ -122,7 +125,7 @@ class OtherMolecules():
         E, V = numpy.linalg.eig(K)
         index = numpy.argmax(E)
         eigenvector = V[:, index]
-        rot_quat = Quaternion(eigenvector[0], eigenvector[1],
+        rot_quat = Quaternion.Quaternion(eigenvector[0], eigenvector[1],
                               eigenvector[2], eigenvector[3])
 
         rot_mat = rot_quat.to_matrix()

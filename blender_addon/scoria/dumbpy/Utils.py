@@ -1,3 +1,6 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
 from .Array import RecArray
 from .Array import array
@@ -90,6 +93,9 @@ def logical_or(arr1, arr2):
         Returns:
             An boolean array.
     """
+
+    if var_type(arr1) == "list":
+        arr1 = array(arr1)
 
     if len(arr1.shape) == 1:
         or_result = [x or y for x,y in zip(arr1, arr2)]
@@ -231,7 +237,7 @@ def vstack(arrays):
     
     raise ValueError('Could not perform vstack. Try installing NUMPY/SCIPY.')
 
-def append_fields(arr, field_name, data):
+def append_fields(arr, field_name, data, usemask=False):
     """Append columns to a rec array.
 
         Args:
@@ -690,3 +696,18 @@ def stack_arrays(arr_list, usemask = False):
         dict[key] = to_list(arr1[key]) + to_list(arr2[key])
 
     return RecArray(dict)
+
+def transpose(arr):
+    """Transpose an array
+
+        Args:
+            arr -- The array to transpose.
+
+        Returns:
+            The transposed array.
+    """
+    
+    if var_type(arr) == "list":
+        arr = array(arr)
+
+    return arr.T

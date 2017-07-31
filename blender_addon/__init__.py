@@ -1,7 +1,7 @@
 try: import cStringIO as StringIO
 except: from io import StringIO
 
-import scoria
+from . import scoria
 import numpy
 import mathutils
 import bpy
@@ -17,22 +17,22 @@ import shutil
 #     imp.reload(DurBlend)
 # except: pass
 
-from DurBlend import Properties
-from DurBlend import UI
-from DurBlend import PanelParentClass
-from DurBlend import ButtonParentClass
-from DurBlend import Messages
-from DurBlend import BackgroundJobParentClass
+from .DurBlend import Properties
+from .DurBlend import UI
+from .DurBlend import PanelParentClass
+from .DurBlend import ButtonParentClass
+from .DurBlend import Messages
+from .DurBlend import BackgroundJobParentClass
 
 plugin_name = "Mineral"
 
 bl_info = {
-    "name": plugin_name,
+    "name": "Mineral",
     "author" : "Name <name@example.com>",
     "version" : (1, 0, 0),
     "blender" : (2, 5, 7),
     "location" : "View 3D > ",
-    "description" : plugin_name + " plugin",
+    "description" : "Mineral plugin",
     "warning" : "",
     "wiki_url" : "",
     "tracker_url" : "",

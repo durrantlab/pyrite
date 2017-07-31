@@ -95,6 +95,8 @@ try:
     from numpy.lib.recfunctions import stack_arrays
     from numpy import std  # Note that there is no dumbpy equivalent yet.
     from numpy import ndarray
+    from numpy import degrees
+    from numpy import radians
 
     def get_col(arr, num):
         return arr[:, num]
@@ -139,6 +141,7 @@ except:
     from .Utils import norm
     from .Utils import fabs
     from .Utils import stack_arrays
+    from .Utils import transpose
 
     dependencies_available.append("DUMBPY")
 

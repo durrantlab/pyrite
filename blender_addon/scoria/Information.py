@@ -1,5 +1,8 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
-from scoria import dumbpy as numpy
+from . import dumbpy as numpy
 from .six.moves import range
 import copy
 
@@ -597,7 +600,6 @@ class Information():
             return
 
         # get the atom names
-
         fix_element_names = copy.deepcopy(self.__atom_information['name_padded']
                                           [selection].astype('<U5'))
 
@@ -608,7 +610,6 @@ class Information():
         # first remove any numbers at the begining of these names
         fix_element_names = numpy.defchararray_lstrip(fix_element_names,
                                                            '0123456789')
-
 
         # remove any thing, letters or numbers, that follows a number,
         # including the number itself. so C2L becomes C, not CL.
@@ -626,21 +627,23 @@ class Information():
         # identify ones that are two-letter elements and one-letter elements
         cnsts = self.__constants
 
-        one_tht_shf_b_2_lttrs = [False] * len(fix_element_names)
+        one_tht_shd_b_2_lttrs = [False] * len(fix_element_names)
 
         for other_two_letter in cnsts['element_names_with_two_letters']:
-            one_tht_shf_b_2_lttrs = numpy.logical_or(
-                one_tht_shf_b_2_lttrs,
+            one_tht_shd_b_2_lttrs = numpy.logical_or(
+                one_tht_shd_b_2_lttrs,
                 (fix_element_names == other_two_letter)
             )
 
         indices_of_two_letter_elements = numpy.nonzero(
-            one_tht_shf_b_2_lttrs
+            one_tht_shd_b_2_lttrs
         )[0]
 
+
         indices_of_one_letter_elements = numpy.nonzero(
-            numpy.logical_not(one_tht_shf_b_2_lttrs)
+            numpy.logical_not(one_tht_shd_b_2_lttrs)
         )[0]
+
 
         # get ones that are one-letter elements
         fix_element_names[indices_of_one_letter_elements] = (
@@ -1054,6 +1057,7 @@ class Information():
         index_of_change = numpy.nonzero(numpy.logical_not(keys == keys2))[0]
         index_of_change = numpy.append(index_of_change,
                                        len(self.__atom_information))
+        
 
         count = 1
         for t in range(len(index_of_change[:-1])):

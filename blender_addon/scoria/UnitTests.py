@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 import unittest
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 import os
-
 import scoria
 
 class InformationTests(unittest.TestCase):

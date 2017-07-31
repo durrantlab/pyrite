@@ -1,3 +1,6 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from scoria.Molecule import Molecule
@@ -7,7 +10,7 @@ try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3
 
 import os
-from scoria import dumbpy as numpy
+from . import dumbpy as numpy
 import inspect
 from time import time
 import shutil
@@ -83,9 +86,9 @@ class Test:
             True
         )
 
-        print("    load_via_MDAnalysis()")
+        print("    load_MDAnalysis_into()")
         self.mol = Molecule()
-        self.mol.load_via_MDAnalysis(sample_structures_dir + "M2_traj.psf",
+        self.mol.load_MDAnalysis_into(sample_structures_dir + "M2_traj.psf",
                                      sample_structures_dir + "M2_traj.dcd")
     
         # Temporarily commented out because no dumbpy implementation needed.
@@ -573,9 +576,9 @@ class FileIOBenchmarks:
     
     def load_dcd(self):
         if "MDANALYSIS" in numpy.dependencies_available:
-            self.molecule.load_via_MDAnalysis(self.sample_structures_dir + "single_frame.psf", self.sample_structures_dir + "single_frame.dcd")
+            self.molecule.load_MDAnalysis_into(self.sample_structures_dir + "single_frame.psf", self.sample_structures_dir + "single_frame.dcd")
     
     def load_dcd_100_frames(self):
         if "MDANALYSIS" in numpy.dependencies_available:
-            self.molecule.load_via_MDAnalysis(self.sample_structures_dir + "single_frame.psf", self.sample_structures_dir + "single_frame.100.dcd")
+            self.molecule.load_MDAnalysis_into(self.sample_structures_dir + "single_frame.psf", self.sample_structures_dir + "single_frame.100.dcd")
         

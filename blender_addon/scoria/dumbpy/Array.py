@@ -1,15 +1,20 @@
 """Note that this code is NOT a replacement for numpy. It imitates numpy just
 well enough to run some of the scoria functions that couldn't run
-otherwise. Installing numpy/scipy is strongly recommended."""
+otherwise. Installing numpy/scipy is strongly recommended.
+
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 
 from __future__ import absolute_import
 import copy
 from .DType import dtype as dtypeClass
 from .Support import to_list
 from .Support import var_type
-import ..six
-from ..six.moves import range
-from ..six.moves import zip
+from scoria.six.moves import range
+from scoria.six.moves import zip
+import scoria.six as six
+
+#from .six import string_types as six_string_types 
 
 def array(lst, dtype=""):
     """Determines whether or not a 1D or 2D array should be used.
@@ -21,11 +26,15 @@ def array(lst, dtype=""):
             An Array2D or Array1D object, as required.
     """
 
-    # If it's a 1D array with non-list elements, just return it.
+    # If it's a 1D array with non-list elements, just return it, but
+    # converting the types.
     try:
         if var_type(lst) == "1D":
             if var_type(lst[0]) in ["number", "string"]:
-                return lst
+                if dtype == "":
+                    return lst
+                else:
+                    return lst_cp.astype(dtype)
     except: pass
 
     # check if it's a list of 1D arrays. If so, convert to list of lists.
@@ -39,7 +48,7 @@ def array(lst, dtype=""):
     elif len(lst) == 0:
         # It's a 1D array
         return Array1D(lst, dtype)
-    elif type(lst[0]) is list:
+    elif type(lst[0]) is list or type(lst[0]) is tuple:
         # It's a list of lists (2D arraay)
         return Array2D(lst, dtype)
     else:
@@ -137,9 +146,14 @@ class Array1D(ArrayParent):
         self.shape = (len(self.lst),)
 
     def __eq__(self, other):
-        bools = copy.deepcopy(self.lst)
+        bools = copy.deepcopy(self.lst)  # Just to hold the booleans.
+        
         for x in range(self.shape[0]):
-            bools[x] = (bools[x] == other)
+            if var_type(other) in ["string", "number"]:
+                bools[x] = (bools[x] == other)
+            else:
+                bools[x] = (bools[x] == other[x])
+            
         return array(bools)
 
     def astype(self, dtype):
@@ -149,12 +163,13 @@ class Array1D(ArrayParent):
                 dtype -- The type to cast.
 
             Returns:
-                Self, in case chaining is required.
+                The new array.
         """
     
-        for i, val in enumerate(self.lst):
-            self.lst[i] = dtypeClass.convert(dtype, val)
-        return self
+        cp = copy.deepcopy(self)
+        for i, val in enumerate(cp.lst):
+            cp.lst[i] = dtypeClass.convert(dtype, val)
+        return cp
 
     def __mul__(self, other):
         # pairwise multiplication
@@ -411,14 +426,16 @@ class RecArray:
         """Cast this array as a certain type.
 
             Returns:
-                This array, in case chaining is required.
+                The new array.
         """
 
-        self.dtype = dtype
+        cp = copy.deepcopy(self)
+
+        cp.dtype = dtype
         for key, tp in dtype.descr:
-            for i, val in enumerate(self.dict[key]):
-                self.dict[key][i] = dtypeClass.convert(tp, val)
-        return self
+            for i, val in enumerate(cp.dict[key]):
+                cp.dict[key][i] = dtypeClass.convert(tp, val)
+        return cp
     
     def copy(self):
         """Makes a copy of this array.

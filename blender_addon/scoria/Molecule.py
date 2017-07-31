@@ -1,6 +1,9 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
-from scoria import dumbpy as numpy
-from .FileIO import FileIO
+from . import dumbpy as numpy
+from . import FileIO
 from .AtomsAndBonds import AtomsAndBonds
 from .Selections import Selections
 from .Manipulation import Manipulation
@@ -32,7 +35,7 @@ class Molecule: # here's the actual Molecule class
             will be input with the method indicated by the fileType parameter.
         """
 
-        self.fileio = FileIO(self)
+        self.fileio = FileIO.FileIO(self)
         self.atoms_and_bonds = AtomsAndBonds(self)
         self.selections = Selections(self)
         self.manipulation = Manipulation(self)
@@ -1504,6 +1507,17 @@ class Molecule: # here's the actual Molecule class
         """
         
         return self.manipulation.set_atom_location(atom_index, new_location)
+
+    def set_coordinate_undo_point(self):
+        """
+        Sets ("saves") the undo point of the atom coordinates. Any
+        subsequent manipulations of atomic coordinates can be "undone" by
+        reseting to this configuration via the coordinate_undo function.
+
+        Wrapper function for :meth:`~scoria.Manipulation.Manipulation.set_coordinate_undo_point`
+        """
+
+        self.manipulation.set_coordinate_undo_point()
 
     def coordinate_undo(self):
         """

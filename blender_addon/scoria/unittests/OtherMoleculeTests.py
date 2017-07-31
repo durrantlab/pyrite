@@ -1,10 +1,14 @@
+"""
+Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
+"""
 from __future__ import absolute_import
 import unittest
 import os
 import sys
 
-import numpy as np
-import scipy
+#import numpy as np
+from scoria import dumbpy as np
+
 import scoria
 from ..six.moves import range
 
