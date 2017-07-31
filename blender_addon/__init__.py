@@ -61,8 +61,8 @@ class Mineral(PanelParentClass):
 
         # Set up scene and object properties.
         bpy.types.Object.pdb_filename = self.prop_funcs.strProp("PDB file", "sample.pdb", 'FILE_PATH')
-        bpy.types.Object.vmd_executable = self.prop_funcs.strProp("VMD binary", "vmd.bin", 'FILE_PATH')
-        bpy.types.Object.vmd_source_file = self.prop_funcs.strProp("PDB / state file", "*.pdb, *.vmd", 'FILE_PATH')
+        # bpy.types.Object.vmd_executable = self.prop_funcs.strProp("VMD binary", "vmd.bin", 'FILE_PATH')
+        # bpy.types.Object.vmd_source_file = self.prop_funcs.strProp("PDB / state file", "*.pdb, *.vmd", 'FILE_PATH')
         bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every n frames", 1, 100, 2)
         
         bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 5)
@@ -123,14 +123,14 @@ class Mineral(PanelParentClass):
                 # self.ui.use_box_row("Select an Object")
                 self.ui.label("Select an object for additional options.")
             else:
-                self.ui.label("1) Load protein models, perhaps via VMD.")
-                self.ui.label("2) Select protein object in 3D viewer.")
+                # self.ui.label("1) Load protein models, perhaps via VMD.")
+                self.ui.label("1) Select protein object in 3D viewer.")
 
-                self.ui.use_box_row("Load VMD File")
-                self.ui.object_property(property_name="vmd_executable")
-                self.ui.object_property(property_name="vmd_source_file")
-                Messages.display_message("LOAD_VMD_FILE_MSG", self)
-                self.ui.ops_button(rel_data_path="load.vmd_file", button_label="Load VMD File")
+                # self.ui.use_box_row("Load VMD File")
+                # self.ui.object_property(property_name="vmd_executable")
+                # self.ui.object_property(property_name="vmd_source_file")
+                # Messages.display_message("LOAD_VMD_FILE_MSG", self)
+                # self.ui.ops_button(rel_data_path="load.vmd_file", button_label="Load VMD File")
                 
                 previous_run_exists = False
                 for obj in bpy.data.objects:
@@ -800,72 +800,72 @@ class OBJECT_OT_MainMenuButton(ButtonParentClass):
         
         return {'FINISHED'}
 
-class OBJECT_OT_LoadVMDFileButton(ButtonParentClass):
-    # """
-    # Button for adding a positioning sphere.
-    # """
-    bl_idname = "load.vmd_file"
-    bl_label = "Load VMD File"
+# class OBJECT_OT_LoadVMDFileButton(ButtonParentClass):
+#     # """
+#     # Button for adding a positioning sphere.
+#     # """
+#     bl_idname = "load.vmd_file"
+#     bl_label = "Load VMD File"
 
-    def execute(self, context):
-        """
-        Moves the mesh as appropriate.
-        """
+#     def execute(self, context):
+#         """
+#         Moves the mesh as appropriate.
+#         """
 
-        obj = context.object
+#         obj = context.object
 
-        try:  # So dumb that blender throws an error if it's already in object mode...
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
+#         try:  # So dumb that blender throws an error if it's already in object mode...
+#             bpy.ops.object.mode_set(mode='OBJECT')
+#         except:
+#             pass
 
-        if not os.path.exists(obj.vmd_executable):
-            Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD executable doesn't exist!")
-            return {'FINISHED'}
+#         if not os.path.exists(obj.vmd_executable):
+#             Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD executable doesn't exist!")
+#             return {'FINISHED'}
         
-        if not os.path.exists(obj.vmd_source_file):
-            Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD file doesn't exist!")
-            return {'FINISHED'}
+#         if not os.path.exists(obj.vmd_source_file):
+#             Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD file doesn't exist!")
+#             return {'FINISHED'}
 
-        tmp_dir = tempfile.mkdtemp() + os.sep
-        vmd_script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + "vmd_scripts" + os.sep
-        vmd_source_file = os.path.abspath(obj.vmd_source_file)
+#         tmp_dir = tempfile.mkdtemp() + os.sep
+#         vmd_script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + "vmd_scripts" + os.sep
+#         vmd_source_file = os.path.abspath(obj.vmd_source_file)
 
-        if obj.vmd_source_file.upper().endswith("PDB"):
-            # It's a pdb file
-            open(tmp_dir + "vmd.vmd",'w').write(
-                open(vmd_script_dir + "pdb.vmd.template", 'r').read().replace(
-                    "{PDB_FILENAME}", vmd_source_file
-                ).replace(
-                    "{OUTPUT_DIR}", tmp_dir
-                )
-            )
-        else:
-            # It's a vmd state file.
-            open(tmp_dir + "vmd.vmd",'w').write(
-                "cd " + os.path.dirname(vmd_source_file) + "\n" +
-                open(vmd_source_file, 'r').read() + "\n" +
-                open(vmd_script_dir + "vmd.vmd.template", 'r').read().replace(
-                    "{OUTPUT_DIR}", tmp_dir
-                )
-            )
+#         if obj.vmd_source_file.upper().endswith("PDB"):
+#             # It's a pdb file
+#             open(tmp_dir + "vmd.vmd",'w').write(
+#                 open(vmd_script_dir + "pdb.vmd.template", 'r').read().replace(
+#                     "{PDB_FILENAME}", vmd_source_file
+#                 ).replace(
+#                     "{OUTPUT_DIR}", tmp_dir
+#                 )
+#             )
+#         else:
+#             # It's a vmd state file.
+#             open(tmp_dir + "vmd.vmd",'w').write(
+#                 "cd " + os.path.dirname(vmd_source_file) + "\n" +
+#                 open(vmd_source_file, 'r').read() + "\n" +
+#                 open(vmd_script_dir + "vmd.vmd.template", 'r').read().replace(
+#                     "{OUTPUT_DIR}", tmp_dir
+#                 )
+#             )
         
-        os.system('"' + obj.vmd_executable + '"' + " -dispdev text -e " + tmp_dir + "vmd.vmd")
+#         os.system('"' + obj.vmd_executable + '"' + " -dispdev text -e " + tmp_dir + "vmd.vmd")
 
-        existing_obj_names = set([obj.name for obj in bpy.data.objects])
-        for filename in glob.glob(tmp_dir + "*.obj"):
-            bpy.ops.import_scene.obj(filepath=filename)
-        new_obj_names = set([obj.name for obj in bpy.data.objects]) - existing_obj_names
+#         existing_obj_names = set([obj.name for obj in bpy.data.objects])
+#         for filename in glob.glob(tmp_dir + "*.obj"):
+#             bpy.ops.import_scene.obj(filepath=filename)
+#         new_obj_names = set([obj.name for obj in bpy.data.objects]) - existing_obj_names
 
-        for obj_name in new_obj_names:
-            print(obj_name)
-            # Here process meshes to make better.
+#         for obj_name in new_obj_names:
+#             print(obj_name)
+#             # Here process meshes to make better.
 
-        shutil.rmtree(tmp_dir)
+#         shutil.rmtree(tmp_dir)
 
-        print(tmp_dir)
+#         print(tmp_dir)
         
-        return {'FINISHED'}
+#         return {'FINISHED'}
 
 # store keymaps here to access after registration
 addon_keymaps = []
@@ -889,7 +889,7 @@ classes_used = [
     OBJECT_OT_RemoveAnimations,
     ProcessTrajectory,
     OBJECT_OT_MainMenuButton,
-    OBJECT_OT_LoadVMDFileButton,
+    # OBJECT_OT_LoadVMDFileButton,
     OBJECT_OT_SetActive
 ]
 
