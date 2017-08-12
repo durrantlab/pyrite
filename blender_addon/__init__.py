@@ -12,11 +12,6 @@ import tempfile
 import glob
 import shutil
 
-# try: 
-#     import imp
-#     imp.reload(DurBlend)
-# except: pass
-
 from .DurBlend import Properties
 from .DurBlend import UI
 from .DurBlend import PanelParentClass
@@ -180,7 +175,7 @@ class Mineral(PanelParentClass):
                 if rot != [0.0, 0.0, 0.0]:
                     self.ui.label("Mesh rotation " + str(rot) + " is not [0.0, 0.0, 0.0]")
                 if scale != [0.0, 0.0, 0.0]:
-                    self.ui.label("Mesh rotation " + str(scale) + " is not [1.0, 1.0, 1.0]")
+                    self.ui.label("Mesh scaling " + str(scale) + " is not [1.0, 1.0, 1.0]")
                 self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
             else:
                 # The location is ok, so show normal ui
@@ -502,6 +497,12 @@ class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
         bpy.context.scene.objects.active.scale.y = 1.0
         bpy.context.scene.objects.active.scale.z = 1.0
 
+        
+        # Zoom in on it
+        for obj in bpy.data.objects: obj.select = False
+        bpy.context.scene.objects.active.select = True
+        bpy.ops.view3d.view_selected(use_all_regions=False)
+
         # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
         # add sphere at a default location unless optional user input provided
         #bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, size=8.0, view_align=False, enter_editmode=False, location=(-30, -85, 397), rotation=(0.0, 0.0, 0.0))
@@ -641,7 +642,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # Add individual spheres
         for sphere in [obj for obj in bpy.data.objects if obj.name.startswith(plugin_name + "_highres_sphere__")]:
             x, y, z = list(sphere.location)
-            r = 5 * sphere.scale.x  # Because radius is 5 at creation
+            r = 5.0 * sphere.scale.x  # Because radius is 5 at creation
             stride = sphere.sphere_pruning_stride
             self.pruning_spheres.append((stride, x, y, z, r))
 
@@ -918,7 +919,7 @@ def unregister():
     Good practice to make it possible to unregister addons.
     """
 
-    bpy.utils.unregister_class(__name__)
+    # bpy.utils.unregister_class(__name__)
 
     bpy.utils.unregister_class(Mineral)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
