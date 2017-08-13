@@ -53,6 +53,7 @@ bl_info = {
 ###### Below specific to this plugin ######
 currently_loading_traj = False
 
+
 class Mineral(PanelParentClass):
     """Mineral"""
     bl_label = "Mineral"
@@ -98,9 +99,7 @@ class Mineral(PanelParentClass):
         # Consider the possibility that a trajectory is current being
         # loaded... If so, panel should only indicate progress.
         if currently_loading_traj:
-            self.ui.use_box_row("Loading Trajectory")
-            Messages.display_message("LOAD_TRAJ_PROGRESS", self)
-            self.ui.label("Press Esc to stop loading...")
+            self.draw_loading_trajectory()
             return
 
         # Consider possibility that nothing is selected/active. You need to
@@ -128,31 +127,14 @@ class Mineral(PanelParentClass):
                 # No active object, so they need to select one.
                 self.ui.label("Select an object for additional options.")
             else:
-                self.ui.label("1) Select protein object in 3D viewer.")
+                # There is an active object, but still need to select one.
+                # Maybe multiple are selected. Since active object available,
+                # can also give options for starting over.
+                self.draw_no_object_selected_start_over()
+            
+            # Show them what to cite.
+            self.draw_citation()
 
-                # Does a previous run exist? If so, provide the option to
-                # start over.
-                previous_run_exists = False
-                for obj in bpy.data.objects:
-                    if obj.name.startswith(plugin_name + "_"):
-                        previous_run_exists = True
-                        break
-
-                if previous_run_exists:
-                    self.ui.use_box_row("Previous Runs")
-                    self.ui.ops_button(
-                        rel_data_path="remove.animations", 
-                        button_label="Remove Animations"
-                    )
-                    self.ui.ops_button(
-                        rel_data_path="start.over", 
-                        button_label="Start Over"
-                    )
-
-            # Make sure they know what to cite!
-            self.ui.use_box_row("Citation")
-            self.ui.label("If you use " + plugin_name + ", please cite:")
-            self.ui.label("{FULL CITATION HERE}")
             return
 
         # What object name to use in the panel title?
@@ -165,32 +147,10 @@ class Mineral(PanelParentClass):
         if obj_to_use.name.startswith(plugin_name + "_highres_sphere__"):
             # It's one of the selection spheres... Provide info/options about
             # that to the user.
-            self.ui.use_layout_row()
-            self.ui.label("High-Detail Region")
-            self.ui.use_box_row("Properties")
-            self.ui.label("Move/scale the sphere to encompass the region.")
-            self.ui.object_property(property_name="sphere_pruning_stride")
-            Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
-            self.ui.use_box_row("Finalize")
-            self.ui.ops_button(
-                rel_data_path="backto.protein", 
-                button_label="Back to Protein Mesh"
-            )
-            self.ui.ops_button(
-                rel_data_path="delete.region", 
-                button_label="Delete Region"
-            )
+            self.draw_high_detail_sphere_panel()
         else:
             # It's not one of the selection spheres. Must be a protein mesh.
-            # Show the name
-            self.ui.use_layout_row()
-            self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
-
-            # Provide button to return to the main menu.
-            self.ui.ops_button(
-                rel_data_path="main.menu", 
-                button_label="Return to Main Menu"
-            )
+            self.draw_protein_mesh_header(obj_to_use_name)
 
             # Check if the location of the object is ok.
             loc = [round(v, 1) for v in list(obj_to_use.location)]
@@ -198,42 +158,153 @@ class Mineral(PanelParentClass):
             scale = [round(v, 1) for v in list(obj_to_use.scale)]
             if loc != [0.0, 0.0, 0.0] or rot != [0.0, 0.0, 0.0] or scale != [1.0, 1.0, 1.0]:
                 # The selected mesh must not have location, rotation, and scale at rest.
-                self.ui.use_box_row("Trajectory and Protein-Mesh Positions Must Match!")
-                if loc != [0.0, 0.0, 0.0]:
-                    self.ui.label("Mesh location " + str(loc) + " is not [0.0, 0.0, 0.0]")
-                if rot != [0.0, 0.0, 0.0]:
-                    self.ui.label("Mesh rotation " + str(rot) + " is not [0.0, 0.0, 0.0]")
-                if scale != [0.0, 0.0, 0.0]:
-                    self.ui.label("Mesh scaling " + str(scale) + " is not [1.0, 1.0, 1.0]")
-                self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
+                self.draw_object_coordinates_not_set_error(loc, rot, scale)
             else:
                 # The location, rotation, and scaling are ok, so show normal UI
-                self.ui.use_box_row("Load a Protein Trajectory")
-                self.ui.object_property(property_name="pdb_filename")
-                self.ui.new_row()
+                self.draw_main_protein_mesh_panel()
 
-                self.ui.use_box_row("Simplify Trajectory")
-                self.ui.object_property(property_name="frame_stride")
-                self.ui.object_property(property_name="overall_pruning_stride")
-                self.ui.new_row()
+    def draw_loading_trajectory(self):
+        """
+        Panel contents when loading a trajectory.
+        """
 
-                self.ui.use_box_row("High-Detail Regions")
+        self.ui.use_box_row("Loading Trajectory")
+        Messages.display_message("LOAD_TRAJ_PROGRESS", self)
+        self.ui.label("Press Esc to stop loading...")
 
-                # Go through and find the high-detail regions, list them.
-                spheres = [obj for obj in bpy.data.objects if obj.name.startswith(plugin_name + "_highres_sphere__")]
-                for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
-                    self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
+    def draw_no_object_selected_start_over(self):
+        """
+        Panel contents when no object is selected. Gives instructions, and
+        gives options of starting over.
+        """
 
-                Messages.display_message("SELECT_SPHERE", self)
-                self.ui.ops_button(rel_data_path="add.sphere", button_label="Create Region")
+        self.ui.label("Select protein object in 3D viewer.")
 
-                # Create the button to start importing the MD trajectory.
-                self.ui.use_box_row("Finalize")
-                self.ui.label("WARNING: Loading simulation may take a bit.")
-                Messages.display_message("TRAJ_FILENAME_DOESNT_EXIST", self)
-                self.ui.ops_button(rel_data_path="load.traj", button_label="Load Trajectory")
+        # Does a previous run exist? If so, provide the option to
+        # start over.
+        previous_run_exists = False
+        for obj in bpy.data.objects:
+            if obj.name.startswith(plugin_name + "_"):
+                previous_run_exists = True
+                break
 
-                self.ui.new_row()
+        if previous_run_exists:
+            self.ui.use_box_row("Previous Runs")
+            self.ui.ops_button(
+                rel_data_path="remove.animations", 
+                button_label="Remove Animations"
+            )
+            self.ui.ops_button(
+                rel_data_path="start.over", 
+                button_label="Start Over"
+            )
+
+    def draw_citation(self):
+        """
+        Show the citation in the panel.
+        """
+
+        # Make sure they know what to cite!
+        self.ui.use_box_row("Citation")
+        self.ui.label("If you use " + plugin_name + ", please cite:")
+        self.ui.label("{FULL CITATION HERE}")
+
+    def draw_high_detail_sphere_panel(self):
+        """
+        The panel to display when a high-detail sphere is selected.
+        """
+
+        # It's one of the selection spheres... Provide info/options about
+        # that to the user.
+        self.ui.use_layout_row()
+        self.ui.label("High-Detail Region")
+        self.ui.use_box_row("Properties")
+        self.ui.label("Move/scale the sphere to encompass the region.")
+        self.ui.object_property(property_name="sphere_pruning_stride")
+        Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
+        self.ui.use_box_row("Finalize")
+        self.ui.ops_button(
+            rel_data_path="backto.protein", 
+            button_label="Back to Protein Mesh"
+        )
+        self.ui.ops_button(
+            rel_data_path="delete.region", 
+            button_label="Delete Region"
+        )
+
+    def draw_protein_mesh_header(self, obj_to_use_name):
+        """
+        Draw the header of the main protein-mesh panel.
+
+        :param str obj_to_use_name: The object name to display.
+        """
+        
+        # Show the name
+        self.ui.use_layout_row()
+        self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
+
+        # Provide button to return to the main menu.
+        self.ui.ops_button(
+            rel_data_path="main.menu", 
+            button_label="Return to Main Menu"
+        )
+
+    def draw_object_coordinates_not_set_error(self, loc, rot, scale):
+        """
+        Draw the error panel if the loc, rot, and scale aren't "at rest."
+
+        :param [float, float, float] loc: A list of floats representing the
+                                     object location.
+
+        :param [float, float, float] rot: A list of floats representing the
+                                     object rotation.
+
+        :param [float, float, float] scale: A list of floats representing the
+                                     object scaling.
+        """
+
+        # The selected mesh must not have location, rotation, and scale at rest.
+        self.ui.use_box_row("Trajectory and Protein-Mesh Positions Must Match!")
+        if loc != [0.0, 0.0, 0.0]:
+            self.ui.label("Mesh location " + str(loc) + " is not [0.0, 0.0, 0.0]")
+        if rot != [0.0, 0.0, 0.0]:
+            self.ui.label("Mesh rotation " + str(rot) + " is not [0.0, 0.0, 0.0]")
+        if scale != [0.0, 0.0, 0.0]:
+            self.ui.label("Mesh scaling " + str(scale) + " is not [1.0, 1.0, 1.0]")
+        self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
+
+    def draw_main_protein_mesh_panel(self):
+        """
+        Draw the main protein mesh panel.
+        """
+
+        # The location, rotation, and scaling are ok, so show normal UI
+        self.ui.use_box_row("Load a Protein Trajectory")
+        self.ui.object_property(property_name="pdb_filename")
+        self.ui.new_row()
+
+        self.ui.use_box_row("Simplify Trajectory")
+        self.ui.object_property(property_name="frame_stride")
+        self.ui.object_property(property_name="overall_pruning_stride")
+        self.ui.new_row()
+
+        self.ui.use_box_row("High-Detail Regions")
+
+        # Go through and find the high-detail regions, list them.
+        spheres = [obj for obj in bpy.data.objects if obj.name.startswith(plugin_name + "_highres_sphere__")]
+        for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
+            self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
+
+        Messages.display_message("SELECT_SPHERE", self)
+        self.ui.ops_button(rel_data_path="add.sphere", button_label="Create Region")
+
+        # Create the button to start importing the MD trajectory.
+        self.ui.use_box_row("Finalize")
+        self.ui.label("WARNING: Loading simulation may take a bit.")
+        Messages.display_message("TRAJ_FILENAME_DOESNT_EXIST", self)
+        self.ui.ops_button(rel_data_path="load.traj", button_label="Load Trajectory")
+
+        self.ui.new_row()
 
 def menu_func(self, context):
     """
@@ -243,6 +314,7 @@ def menu_func(self, context):
     """
 
     self.layout.operator(Mineral.bl_idname)
+
 
 class OBJECT_OT_LoadTrajButton(ButtonParentClass):
     """
@@ -301,6 +373,7 @@ def geometric_center(obj):
     local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
     global_bbox_center = obj.matrix_world * local_bbox_center
     return global_bbox_center
+
 
 class OBJECT_OT_AddSphereButton(ButtonParentClass):
     """
@@ -371,6 +444,7 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             Messages.send_message("SELECT_SPHERE", "ERROR: Click on protein mesh to position 3D cursor!")
         return{'FINISHED'}
 
+
 class OBJECT_OT_SphereDoneButton(ButtonParentClass):
     """
     Button to return to Protein Mesh panel once done with high-detail sphere.
@@ -404,6 +478,7 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         
         return{'FINISHED'}
 
+
 class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
     """
     Button to delete a sphere.
@@ -435,6 +510,7 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
 
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
     """
     Button to select and edit an existing sphere. This is a parent all other
@@ -462,6 +538,7 @@ class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
         bpy.context.scene.objects.active = bpy.data.objects[sphere.name]
         bpy.context.scene.objects.active.select = True
 
+
 class OBJECT_OT_SelectExistingSphereButton0(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -477,6 +554,7 @@ class OBJECT_OT_SelectExistingSphereButton0(OBJECT_OT_SelectExistingSphereButton
 
         self.switch_to_obj(0)
         return{'FINISHED'}
+
 
 class OBJECT_OT_SelectExistingSphereButton1(OBJECT_OT_SelectExistingSphereButtonParent):
     """
@@ -494,6 +572,7 @@ class OBJECT_OT_SelectExistingSphereButton1(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(1)
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButton2(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -509,6 +588,7 @@ class OBJECT_OT_SelectExistingSphereButton2(OBJECT_OT_SelectExistingSphereButton
 
         self.switch_to_obj(2)
         return{'FINISHED'}
+
 
 class OBJECT_OT_SelectExistingSphereButton3(OBJECT_OT_SelectExistingSphereButtonParent):
     """
@@ -526,6 +606,7 @@ class OBJECT_OT_SelectExistingSphereButton3(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(3)
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButton4(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -541,6 +622,7 @@ class OBJECT_OT_SelectExistingSphereButton4(OBJECT_OT_SelectExistingSphereButton
 
         self.switch_to_obj(4)
         return{'FINISHED'}
+
 
 class OBJECT_OT_SelectExistingSphereButton5(OBJECT_OT_SelectExistingSphereButtonParent):
     """
@@ -558,6 +640,7 @@ class OBJECT_OT_SelectExistingSphereButton5(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(5)
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButton6(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -573,6 +656,7 @@ class OBJECT_OT_SelectExistingSphereButton6(OBJECT_OT_SelectExistingSphereButton
 
         self.switch_to_obj(6)
         return{'FINISHED'}
+
 
 class OBJECT_OT_SelectExistingSphereButton7(OBJECT_OT_SelectExistingSphereButtonParent):
     """
@@ -590,6 +674,7 @@ class OBJECT_OT_SelectExistingSphereButton7(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(7)
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButton8(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -606,6 +691,7 @@ class OBJECT_OT_SelectExistingSphereButton8(OBJECT_OT_SelectExistingSphereButton
         self.switch_to_obj(8)
         return{'FINISHED'}
 
+
 class OBJECT_OT_SelectExistingSphereButton9(OBJECT_OT_SelectExistingSphereButtonParent):
     """
     Button to select and edit an existing sphere.
@@ -621,6 +707,7 @@ class OBJECT_OT_SelectExistingSphereButton9(OBJECT_OT_SelectExistingSphereButton
 
         self.switch_to_obj(9)
         return{'FINISHED'}
+
 
 class OBJECT_OT_StartOver(ButtonParentClass):
     """
@@ -648,6 +735,7 @@ class OBJECT_OT_StartOver(ButtonParentClass):
                 bpy.ops.object.delete()
 
         return{'FINISHED'}
+
 
 class OBJECT_OT_RemoveAnimations(ButtonParentClass):
     """
@@ -679,6 +767,7 @@ class OBJECT_OT_RemoveAnimations(ButtonParentClass):
                 bpy.ops.object.delete()
 
         return{'FINISHED'}
+
 
 class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
     """
@@ -723,6 +812,7 @@ class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
         return{'FINISHED'}
+
 
 class ProcessTrajectory(BackgroundJobParentClass):
     """
@@ -1041,6 +1131,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         # No longer running
         currently_loading_traj = False
+
 
 class OBJECT_OT_MainMenuButton(ButtonParentClass):
     """
