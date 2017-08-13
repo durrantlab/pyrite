@@ -115,7 +115,7 @@ class UI:
         # Note that rel_data_path does not include bpy.ops.
         # So instead of bpy.ops.object.modifier_add, just object.modifier_add
         row = self.new_row()
-        row.operator(rel_data_path, text=button_label) #, icon='FILESEL')
+        row.operator(rel_data_path, text=button_label)
 
     def ops_action_button(self, rel_data_path="object.select_all", button_label="Invert Selection!", action="INVERT"):
         """

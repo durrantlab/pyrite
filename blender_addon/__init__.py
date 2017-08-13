@@ -67,27 +67,11 @@ class Mineral(PanelParentClass):
         class must have this function!
         """
 
-        # frame_stride description = Every # of frames to keep
-        # overall_pruning_stride description = Every # of atoms to keep
-
         # Set up scene and object properties.
         bpy.types.Object.pdb_filename = self.prop_funcs.strProp("PDB file", "sample.pdb", 'FILE_PATH')
-        # bpy.types.Object.vmd_executable = self.prop_funcs.strProp("VMD binary", "vmd.bin", 'FILE_PATH')
-        # bpy.types.Object.vmd_source_file = self.prop_funcs.strProp("PDB / state file", "*.pdb, *.vmd", 'FILE_PATH')
         bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every n frames", 1, 100, 2)
-        
         bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 5)
-
-        # bpy.types.Object.sphere_coordinate = bpy.props.FloatVectorProperty(
-        #     name="Center coordinates",
-        #     default=(0.0, 0.0, 0.0)
-        # )
-        # bpy.types.Object.sphere_radius = self.prop_funcs.intProp("Radius of sphere", 1, 100, 20, nothing)
         bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 2)
-
-        # bpy.types.Object.center_coord = self.prop_funcs.intVectorProp("Center coordinates", (-1000, -1000, -1000), (1000, 1000, 1000), (0, 0, 0), 'NONE', 3, nothing)
-        # Need a float vector property to input atom coordinates
-        # How do we make it possible to enter more coordinates if desired?
 
     def draw(self, context):
         """
@@ -98,7 +82,7 @@ class Mineral(PanelParentClass):
         THE DRAW FUNCTION MUST ALWAYS START WITH:
         self.set_class_variables(context)
 
-        :param ??? context: The context of the currently selected object.
+        :param bpy_types.Context context: The context.
         """
 
         global plugin_name
@@ -106,43 +90,48 @@ class Mineral(PanelParentClass):
         
         self.set_class_variables(context)
 
-        # Pick the object
+        # Pick the object. Use active object if self.obj is None.
         obj_to_use = self.obj
         if obj_to_use is None:
             obj_to_use = bpy.context.scene.objects.active
         
-        # Consider the possibility that a trajectory is being loaded...
+        # Consider the possibility that a trajectory is current being
+        # loaded... If so, panel should only indicate progress.
         if currently_loading_traj:
             self.ui.use_box_row("Loading Trajectory")
             Messages.display_message("LOAD_TRAJ_PROGRESS", self)
             self.ui.label("Press Esc to stop loading...")
             return
 
-        # Consider possibility that nothing is selected/active.
+        # Consider possibility that nothing is selected/active. You need to
+        # provide instructions re. how to proceed.
         mesh_not_selected = False
         if obj_to_use is None:
             # Nothing active
             mesh_not_selected = True
+
         if mesh_not_selected == False:
-            currently_selected = [obj for obj in bpy.data.objects if obj.select == True]
+            # What is more than one thing is selected? That doesn't work
+            # either...
+            currently_selected = [
+                obj for obj in bpy.data.objects 
+                if obj.select == True
+            ]
             if len(currently_selected) != 1:
                 mesh_not_selected = True
+
         if mesh_not_selected == True:
+            # So no mesh is selected. Provide instructions re. how to proceed.
             self.ui.use_box_row("Instructions")
             
             if bpy.context.scene.objects.active == None:
-                # self.ui.use_box_row("Select an Object")
+                # No active object, so they need to select one.
                 self.ui.label("Select an object for additional options.")
             else:
-                # self.ui.label("1) Load protein models, perhaps via VMD.")
                 self.ui.label("1) Select protein object in 3D viewer.")
 
-                # self.ui.use_box_row("Load VMD File")
-                # self.ui.object_property(property_name="vmd_executable")
-                # self.ui.object_property(property_name="vmd_source_file")
-                # Messages.display_message("LOAD_VMD_FILE_MSG", self)
-                # self.ui.ops_button(rel_data_path="load.vmd_file", button_label="Load VMD File")
-                
+                # Does a previous run exist? If so, provide the option to
+                # start over.
                 previous_run_exists = False
                 for obj in bpy.data.objects:
                     if obj.name.startswith(plugin_name + "_"):
@@ -151,19 +140,31 @@ class Mineral(PanelParentClass):
 
                 if previous_run_exists:
                     self.ui.use_box_row("Previous Runs")
-                    self.ui.ops_button(rel_data_path="remove.animations", button_label="Remove Animations")
-                    self.ui.ops_button(rel_data_path="start.over", button_label="Start Over")
+                    self.ui.ops_button(
+                        rel_data_path="remove.animations", 
+                        button_label="Remove Animations"
+                    )
+                    self.ui.ops_button(
+                        rel_data_path="start.over", 
+                        button_label="Start Over"
+                    )
 
+            # Make sure they know what to cite!
             self.ui.use_box_row("Citation")
             self.ui.label("If you use " + plugin_name + ", please cite:")
             self.ui.label("{FULL CITATION HERE}")
             return
 
-        # What object name to use?
-        obj_to_use_name = obj_to_use.name if not obj_to_use.name.startswith(plugin_name + "_highres_sphere__") else obj_to_use.name.split("__")[1]
+        # What object name to use in the panel title?
+        obj_to_use_name = (
+            obj_to_use.name   
+            if not obj_to_use.name.startswith(plugin_name + "_highres_sphere__")
+            else obj_to_use.name.split("__")[1]
+        )
 
         if obj_to_use.name.startswith(plugin_name + "_highres_sphere__"):
-            # It's one of the selection spheres...
+            # It's one of the selection spheres... Provide info/options about
+            # that to the user.
             self.ui.use_layout_row()
             self.ui.label("High-Detail Region")
             self.ui.use_box_row("Properties")
@@ -171,20 +172,32 @@ class Mineral(PanelParentClass):
             self.ui.object_property(property_name="sphere_pruning_stride")
             Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
             self.ui.use_box_row("Finalize")
-            self.ui.ops_button(rel_data_path="backto.protein", button_label="Back to Protein Mesh")
-            self.ui.ops_button(rel_data_path="delete.region", button_label="Delete Region")
+            self.ui.ops_button(
+                rel_data_path="backto.protein", 
+                button_label="Back to Protein Mesh"
+            )
+            self.ui.ops_button(
+                rel_data_path="delete.region", 
+                button_label="Delete Region"
+            )
         else:
+            # It's not one of the selection spheres. Must be a protein mesh.
             # Show the name
             self.ui.use_layout_row()
             self.ui.label("Protein Mesh (Object Name: " + obj_to_use_name  + ")")
-            self.ui.ops_button(rel_data_path="main.menu", button_label="Return to Main Menu")
-            # It's not a selection sphere. Must be a mesh.
+
+            # Provide button to return to the main menu.
+            self.ui.ops_button(
+                rel_data_path="main.menu", 
+                button_label="Return to Main Menu"
+            )
+
             # Check if the location of the object is ok.
             loc = [round(v, 1) for v in list(obj_to_use.location)]
             rot = [round(v, 1) for v in list(obj_to_use.rotation_euler)]
             scale = [round(v, 1) for v in list(obj_to_use.scale)]
             if loc != [0.0, 0.0, 0.0] or rot != [0.0, 0.0, 0.0] or scale != [1.0, 1.0, 1.0]:
-                # The selected mesh must have location, rotation, and scale at rest.
+                # The selected mesh must not have location, rotation, and scale at rest.
                 self.ui.use_box_row("Trajectory and Protein-Mesh Positions Must Match!")
                 if loc != [0.0, 0.0, 0.0]:
                     self.ui.label("Mesh location " + str(loc) + " is not [0.0, 0.0, 0.0]")
@@ -194,32 +207,27 @@ class Mineral(PanelParentClass):
                     self.ui.label("Mesh scaling " + str(scale) + " is not [1.0, 1.0, 1.0]")
                 self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
             else:
-                # The location is ok, so show normal ui
+                # The location, rotation, and scaling are ok, so show normal UI
                 self.ui.use_box_row("Load a Protein Trajectory")
-                # self.ui.label("VMD can save MD trajectories as multi-frame PDBs.")
                 self.ui.object_property(property_name="pdb_filename")
                 self.ui.new_row()
 
                 self.ui.use_box_row("Simplify Trajectory")
-                # self.ui.label("Keep only some frames and atoms. Saves memory.")
                 self.ui.object_property(property_name="frame_stride")
                 self.ui.object_property(property_name="overall_pruning_stride")
                 self.ui.new_row()
 
                 self.ui.use_box_row("High-Detail Regions")
 
-                # Go through and find the high-detail regions
+                # Go through and find the high-detail regions, list them.
                 spheres = [obj for obj in bpy.data.objects if obj.name.startswith(plugin_name + "_highres_sphere__")]
                 for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
                     self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
 
-                # cursor_3d_msg = "To create new, position 3D cursor and..."
                 Messages.display_message("SELECT_SPHERE", self)
                 self.ui.ops_button(rel_data_path="add.sphere", button_label="Create Region")
 
-                # self.ui.new_row()
-                # self.ui.use_layout_row()
-
+                # Create the button to start importing the MD trajectory.
                 self.ui.use_box_row("Finalize")
                 self.ui.label("WARNING: Loading simulation may take a bit.")
                 Messages.display_message("TRAJ_FILENAME_DOESNT_EXIST", self)
@@ -228,16 +236,27 @@ class Mineral(PanelParentClass):
                 self.ui.new_row()
 
 def menu_func(self, context):
+    """
+    Adds Mineral to Blender's menu system.
+
+    :param bpy_types.Context context: The context.
+    """
+
     self.layout.operator(Mineral.bl_idname)
 
 class OBJECT_OT_LoadTrajButton(ButtonParentClass):
     """
-    Button for displaying basic pruned protein.
+    Button for loading in a trajectory.
     """
+
     bl_idname = "load.traj"
     bl_label = "Load Trajectory"
 
     def __init__(self):
+        """
+        Initialize the button object.
+        """
+
         self.trajectory = None
         self.kdtree = None
         self.overall_pruning_stride = 1
@@ -245,8 +264,11 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
 
     def execute(self, context):
         """
-        What should be run when the display button is pressed.
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
+
         global currently_loading_traj
 
         obj = context.object
@@ -263,29 +285,43 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
             currently_loading_traj = True
             bpy.ops.process.trajectory('INVOKE_DEFAULT')
 
-        return{'FINISHED'}
+        return {'FINISHED'}
 
 def geometric_center(obj):
+    """
+    Calculate the geometric center of an object.
+
+    :param obj bpy_types.Object: The object to consider.
+
+    :returns: a vector, the geometric center
+    :rtype: :class:`Vector`
+    """
+    
+    # See https://blender.stackexchange.com/questions/62040/get-center-of-geometry-of-an-object
     local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
     global_bbox_center = obj.matrix_world * local_bbox_center
     return global_bbox_center
 
 class OBJECT_OT_AddSphereButton(ButtonParentClass):
-    # """
-    # Button for adding a positioning sphere.
-    # """
+    """
+    Button for adding a high-detail sphere.
+    """
+
     bl_idname = "add.sphere"
     bl_label = "Add Selection Sphere"
 
     def execute(self, context):
         """
-        Adds a sphere to the scene.
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
 
         obj = context.object
         global plugin_name
         
-        # So dumb that blender throws an error if it's already in object mode...
+        # So dumb that blender throws an error if it's already in object
+        # mode...
         try: bpy.ops.object.mode_set(mode='OBJECT')
         except: pass
 
@@ -296,9 +332,15 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
         a_min = global_bbox_center - 0.5 * obj.dimensions
         a_max = global_bbox_center + 0.5 * obj.dimensions
 
-        if cursor_loc.x > a_min.x - margin and cursor_loc.y > a_min.y - margin and cursor_loc.z > a_min.z - margin and cursor_loc.x < a_max.x + margin and cursor_loc.y < a_max.y + margin and cursor_loc.z < a_max.z + margin:
-            # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
-            # add sphere at a default location unless optional user input provided
+        if (cursor_loc.x > a_min.x - margin and 
+            cursor_loc.y > a_min.y - margin and 
+            cursor_loc.z > a_min.z - margin and 
+            cursor_loc.x < a_max.x + margin and 
+            cursor_loc.y < a_max.y + margin and 
+            cursor_loc.z < a_max.z + margin):
+
+            # The 3D cursor is near the protein mesh. Add sphere at cursor
+            # location.
             bpy.ops.mesh.primitive_uv_sphere_add(
                 segments=16, 
                 ring_count=16, 
@@ -309,9 +351,10 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
                 rotation=(0.0, 0.0, 0.0)
             )
             
+            # Store the new sphere in a variable.
             sphere = bpy.context.scene.objects.active
 
-            # Pick sphere name, making sure not already used
+            # Pick sphere name, making sure not already used.
             sphere_name = plugin_name + "_highres_sphere__" + obj.name + "__" + str(0)
             i = 0
             while sphere_name in bpy.data.objects.keys():
@@ -319,36 +362,41 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
                 sphere_name = plugin_name + "_highres_sphere__" + obj.name + "__" + str(i)
 
             sphere.name = sphere_name
+
+            # The sphere should be wireframe (to see into).
             bpy.ops.object.modifier_add(type='WIREFRAME')
             sphere.modifiers["Wireframe"].thickness = 0.2
-
-            # be able to change size of sphere
-            # make sphere more transparent?
-            # menu select and edit a sphere already added
-            # command to grab object and position (or select object and press G): bpy.ops.transform.translate()
         else:
+            # The 3D cursor is not near the selected mesh, so throw an error...
             Messages.send_message("SELECT_SPHERE", "ERROR: Click on protein mesh to position 3D cursor!")
         return{'FINISHED'}
 
 class OBJECT_OT_SphereDoneButton(ButtonParentClass):
-    # """
-    # Finalize button for removing all positioning spheres.
-    # """
+    """
+    Button to return to Protein Mesh panel once done with high-detail sphere.
+    """
+
     bl_idname = "backto.protein"
     bl_label = "Back to Protein Mesh"
 
     def execute(self, context):
         """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
 
+        # Figure out what the protein mesh is.
         obj = context.object
         protein_mesh_name = obj.name.split("__")[1]
         protein_mesh = bpy.data.objects[protein_mesh_name]
 
-        # Make sure sphere pruning is less than whole protein pruning
+        # Make sure sphere pruning factor is less than whole protein pruning
         if protein_mesh.overall_pruning_stride < obj.sphere_pruning_stride:
+            # It isn't, so throw an error.
             Messages.send_message("SPHERE_STRIDE_TOO_HIGH", "ERROR: Value too big. Set <= " + str(protein_mesh.overall_pruning_stride) + " (general value).")
         else:
+            # It is, so switch back to the protein mesh.
             for obj in bpy.data.objects: obj.select = False
 
             bpy.context.scene.objects.active = protein_mesh
@@ -357,111 +405,242 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         return{'FINISHED'}
 
 class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
-    # """
-    # Finalize button for removing all positioning spheres.
-    # """
+    """
+    Button to delete a sphere.
+    """
+    
     bl_idname = "delete.region"
     bl_label = "Delete Region"
 
     def execute(self, context):
         """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
 
+        # Get the associated protein mesh.
         obj = context.object
         protein_mesh_name = obj.name.split("__")[1]
         protein_mesh = bpy.data.objects[protein_mesh_name]
 
+        # Delete the sphere.
         for o in bpy.data.objects: o.select = False
         obj.select = True
         bpy.ops.object.delete() 
 
+        # Switch back to the protein mesh.
         bpy.context.scene.objects.active = protein_mesh
         bpy.context.scene.objects.active.select = True
-
-        # Delete original object
 
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
-    # """
-    # Select an existing sphere
-    # """
+    """
+    Button to select and edit an existing sphere. This is a parent all other
+    select-sphere buttons inherit. 
+    """
+
     bl_idname = ""
     bl_label = ""
 
     def switch_to_obj(self, index):
+        """
+        Switch to a given high-detail sphere.
+
+        :param int index: The index of the sphere.
+        """
+        
         global plugin_name
 
+        # Get the sphere
         spheres = [obj for obj in bpy.data.objects if obj.name.startswith(plugin_name + "_highres_sphere__")]
         sphere = spheres[index]
+
+        # Make that sphere selected and active.
         for obj in bpy.data.objects: obj.select = False
         bpy.context.scene.objects.active = bpy.data.objects[sphere.name]
         bpy.context.scene.objects.active.select = True
 
 class OBJECT_OT_SelectExistingSphereButton0(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere0"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(0)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton1(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere1"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(1)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton2(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere2"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(2)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton3(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere3"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(3)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton4(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere4"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(4)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton5(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere5"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(5)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton6(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere6"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(6)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton7(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere7"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(7)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton8(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere8"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(8)
         return{'FINISHED'}
 
 class OBJECT_OT_SelectExistingSphereButton9(OBJECT_OT_SelectExistingSphereButtonParent):
+    """
+    Button to select and edit an existing sphere.
+    """
+
     bl_idname = "select.sphere9"
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.switch_to_obj(9)
         return{'FINISHED'}
 
-class OBJECT_OT_StartOver(OBJECT_OT_SelectExistingSphereButtonParent):
+class OBJECT_OT_StartOver(ButtonParentClass):
+    """
+    Button to start over entirely. Deletes all animations and high-detail
+    spheres.
+    """
+
     bl_idname = "start.over"
+    bl_label = "Start Over"
+
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         global plugin_name
+
+        # Delete anything object that starts with the plugin's name.
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
             if obj.name.startswith(plugin_name + "_"):
@@ -470,88 +649,97 @@ class OBJECT_OT_StartOver(OBJECT_OT_SelectExistingSphereButtonParent):
 
         return{'FINISHED'}
 
-class OBJECT_OT_RemoveAnimations(OBJECT_OT_SelectExistingSphereButtonParent):
+class OBJECT_OT_RemoveAnimations(ButtonParentClass):
+    """
+    Button to start over in part. Removes animations, but leaves high-detail
+    spheres intact.
+    """
+
     bl_idname = "remove.animations"
+    bl_label = "Remove Animations"
+
     def execute(self, context):
+        """
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
+        """
+
         global plugin_name
+
+        # Delete anything that starts with the plugin's name and is not a
+        # high-detail sphere.
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
-            if obj.name.startswith(plugin_name + "_") and not obj.name.startswith(plugin_name + "_highres_sphere__"):
+            if (
+                obj.name.startswith(plugin_name + "_") and 
+                not obj.name.startswith(plugin_name + "_highres_sphere__")
+            ):
                 obj.select = True
                 bpy.ops.object.delete()
 
         return{'FINISHED'}
 
 class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
-    # """
-    # Button for adding a positioning sphere.
-    # """
+    """
+    Button for setting a protein mesh's location, rotation, and scaling
+    vectors.
+    """
+
     bl_idname = "default.locrotscale"
     bl_label = "Fix (Move) Mesh Position"
 
     def execute(self, context):
         """
-        Moves the mesh as appropriate.
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
 
         obj = context.object
 
-        try:  # So dumb that blender throws an error if it's already in object mode...
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
+        # So dumb that blender throws an error if it's already in object mode...
+        try: bpy.ops.object.mode_set(mode='OBJECT')
+        except: pass
 
+        # Set the object's location.
         bpy.context.scene.objects.active.location.x = 0.0
         bpy.context.scene.objects.active.location.y = 0.0
         bpy.context.scene.objects.active.location.z = 0.0
 
+        # Set the object's rotation.
         bpy.context.scene.objects.active.rotation_euler.x = 0.0
         bpy.context.scene.objects.active.rotation_euler.y = 0.0
         bpy.context.scene.objects.active.rotation_euler.z = 0.0
 
+        # Set the object's scale.
         bpy.context.scene.objects.active.scale.x = 1.0
         bpy.context.scene.objects.active.scale.y = 1.0
         bpy.context.scene.objects.active.scale.z = 1.0
-
         
-        # Zoom in on it
+        # Zoom in on the object.
         for obj in bpy.data.objects: obj.select = False
         bpy.context.scene.objects.active.select = True
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
-        # bpy.ops.mesh.primitive_uv_sphere_add()  # name "pruning_sphere"
-        # add sphere at a default location unless optional user input provided
-        #bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, size=8.0, view_align=False, enter_editmode=False, location=(-30, -85, 397), rotation=(0.0, 0.0, 0.0))
-        # be able to change size of sphere
-        # make sphere more transparent?
-        # menu select and edit a sphere already added
-        # command to grab object and position (or select object and press G): bpy.ops.transform.translate()
-
         return{'FINISHED'}
-
-
-class OBJECT_OT_SetActive(ButtonParentClass):
-    # """
-    # Button for adding a positioning sphere.
-    # """
-    bl_idname = "set.active"
-    bl_label = "Set Active"
-
-    def execute(self, context):
-        """
-        Moves the mesh as appropriate.
-        """
-
-        bpy.context.scene.objects.active = bpy.data.objects[0]
-
-        return{'FINISHED'}
-
-
 
 class ProcessTrajectory(BackgroundJobParentClass):
+    """
+    A class to load and process a molecular dynamics trajectory.
+    """
+    
     bl_idname = "process.trajectory"
 
     def setup(self, context, event):
+        """
+        Set up variables needed to process the trajectory.
+
+        :param bpy_types.Context context: The context.
+
+        :param bpy.types.Event event: The event.
+        """
+        
         self.overall_pruning_stride = context.object.overall_pruning_stride
         self.current_step = "START"
         self.current_frame = None
@@ -566,39 +754,75 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.protein_obj = bpy.context.scene.objects.active
 
     def run_step(self, context, event):
+        """
+        Run a single step of the background job. You need to do it in steps so
+        you can periodically return control to the UI, making it seem like a
+        background job.
+
+        :param bpy_types.Context context: The context. 
+
+        :param bpy.types.Event event: The event.
+        """
+        
         if self.current_step == "START":
+            # On the first step, set the current frame and post a message.
             self.current_frame = next(self.frames)
-            Messages.send_message("LOAD_TRAJ_PROGRESS", "Identifying which atoms to keep...")
+            Messages.send_message(
+                "LOAD_TRAJ_PROGRESS", 
+                "Identifying which atoms to keep..."
+            )
             self.current_step = "ID_ATOMS"
         elif self.current_step == "ID_ATOMS":
+            # Second step. Loading the first frame.
             self.get_pruned_indecies()
             self.add_empties_at_atom_points()
             Messages.send_message("LOAD_TRAJ_PROGRESS", "Loading frame 1...")
             self.current_step = "POSITION_EMPTIES"
         if self.current_step == "LOAD_FRAME":
+            # First half if third step. Loading additional frames...
             try:
                 self.current_frame = next(self.frames)
-                Messages.send_message("LOAD_TRAJ_PROGRESS", "Loading frame " + str(self.frame_index + 1) + "...")
+                Messages.send_message(
+                    "LOAD_TRAJ_PROGRESS", 
+                    "Loading frame " + str(self.frame_index + 1) + "..."
+                )
                 self.current_step = "POSITION_EMPTIES"
                 return None
             except StopIteration:
+                # Here you've reached the last frame, so proceed to the next
+                # step.
                 self.position_empties_at_atom_locs(position_all=True)
-                Messages.send_message("LOAD_TRAJ_PROGRESS", "Setting up armature and bones...")
+                Messages.send_message(
+                    "LOAD_TRAJ_PROGRESS", 
+                    "Setting up armature and bones..."
+                )
                 self.current_step = "ARMATURE"
         elif self.current_step == "POSITION_EMPTIES":
+            # Second half of third step. Position empties at the location of
+            # the atoms.
             self.position_empties_at_atom_locs()
             self.frame_index = self.frame_index + 1
             self.current_step = "LOAD_FRAME"
         elif self.current_step == "ARMATURE":
+            # Everything loaded. Now set up armature and bones.
             self.armature_and_bones()
             return {'CANCELLED'}
     
     def job_cancelled(self):
+        """
+        The user cancels the job.
+        """
+
         global currently_loading_traj
         bpy.ops.remove.animations('INVOKE_DEFAULT')
         currently_loading_traj = False
 
     def get_frames(self):
+        """
+        Get the next frame from the trajectory. Because this is a generator,
+        we only load in one frame at a time. That's good for memory.
+        """
+
         current_frame = 0
         pdb_file = open(self.pdb_filename, 'r')
         current_pdb_frame_lines = []
@@ -624,10 +848,19 @@ class ProcessTrajectory(BackgroundJobParentClass):
                 break
 
     def add_empties_at_atom_points(self):
+        """
+        Add enough empty objects for the number of atoms that will be loaded.
+        """
+
+        # Make an empty that all the other empties will be parented to. This
+        # is just to keep things organized.
         guide_empties = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
         guide_empties = bpy.context.object
         guide_empties.name = plugin_name + "_GuideEmpties"
-        self.guide_empties_location = numpy.mean(self.current_frame.get_coordinates(), axis=0)
+        self.guide_empties_location = numpy.mean(
+            self.current_frame.get_coordinates(), 
+            axis=0
+        )
         guide_empties.location = self.guide_empties_location
         
         # Add enough empties to match the number of bones. 
@@ -639,13 +872,10 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
     def get_pruned_indecies(self):
         """
-        Applies pruning spheres to the existing protein.
-
-        Args:
-
-        Returns:
-
+        Applies pruning spheres to the existing protein. Determines the
+        indecies of the atoms to keep.
         """
+
         # The key is to use the smallest pruning stride possible for a given
         # point.
 
@@ -672,7 +902,6 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # Add coordinates to tree
         for i, c in enumerate(coors):
             kdtree.insert(c, i)
-
         kdtree.balance()
 
         # Make sure the pruning spheres are ordered by the stride, from
@@ -681,7 +910,6 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         # Go through each sphere and apply a mask, where true means the
         # coordinate is in the given sphere, and false means it isn't.
-        # masks = []
         indices_in_previous_spheres = set([])
         total_indices_to_keep = set([])
         for sphere in self.pruning_spheres:
@@ -709,6 +937,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
             # Update all the totals
             total_indices_to_keep = total_indices_to_keep.union(set(indices_to_keep_sparce))
 
+        # Keep track of the atomic indecies to keep.
         total_indices_to_keep = list(total_indices_to_keep)
         total_indices_to_keep.sort()
         total_indices_to_keep = numpy.array(total_indices_to_keep)
@@ -718,23 +947,38 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
     def position_empties_at_atom_locs(self, position_all=False):
         """
+        Positions the empties at the locations of the retained atoms.
+
+        :param boolean position_all: Whether or not to position all empties.
+                       Use True at first and last frame. Defaults to False.
         """
-        try:  # So dumb that blender throws an error if it's already in object mode...
+
+        try:  
+            # So dumb that blender throws an error if it's already in object
+            # mode...
             bpy.ops.object.mode_set(mode='OBJECT')
         except:
             pass
 
         global plugin_name
 
-        bpy.context.scene.frame_set(self.frame_index)  # Sets next frame to add
+        # Sets next frame to add
+        bpy.context.scene.frame_set(self.frame_index)
 
         if self.frame_index == 0 or position_all == True:
+            # Set all of them.
             sel = self.selection_atoms_to_keep
         else:
-            sel = self.selection_atoms_to_keep_with_offset[self.frame_index % self.frame_stride]
+            # Set just the ones appropriate for this frame (using offset).
+            sel = self.selection_atoms_to_keep_with_offset[
+                self.frame_index % self.frame_stride
+            ]
         
+        # Get the coordinates of the appropriate atoms.
         coors = self.current_frame.get_coordinates()[sel]
 
+        # Go through and set the appropriate empty object to the associated
+        # coordinate.
         for coor_index, coor in enumerate(coors):
             si = sel[coor_index]
             empty = bpy.data.objects[plugin_name + "_empty" + str(si)]
@@ -742,6 +986,10 @@ class ProcessTrajectory(BackgroundJobParentClass):
             empty.keyframe_insert(data_path='location')
 
     def armature_and_bones(self):
+        """
+        Setup the armature and bones.
+        """
+
         global plugin_name
         global currently_loading_traj
 
@@ -758,10 +1006,12 @@ class ProcessTrajectory(BackgroundJobParentClass):
             bone = armature.edit_bones.new(bone_name)
             bone.head = (0, 0, 0)
             bone.tail = (0, 0, 2)
-            bone.envelope_weight = 1.0  # Needed for envelope-based mesh vertex weighting.
+            bone.envelope_weight = 1.0  # Needed for envelope-based mesh
+                                        # vertex weighting.
             bone.envelope_distance = 5.0
 
-        # Now constrain them.
+        # Now constrain them to the locations of the empty objects (which are
+        # animated).
         bpy.ops.object.mode_set(mode='POSE')
         armature = bpy.data.objects[plugin_name + "_Armature"]
 
@@ -783,10 +1033,9 @@ class ProcessTrajectory(BackgroundJobParentClass):
         bpy.ops.object.parent_set(type="ARMATURE_AUTO")
 
         # Zoom in on armature
-        try:
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
+        try: bpy.ops.object.mode_set(mode='OBJECT')
+        except: pass
+        
         bpy.context.scene.objects.active = bpy.data.objects[plugin_name + '_Armature']
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
@@ -794,97 +1043,33 @@ class ProcessTrajectory(BackgroundJobParentClass):
         currently_loading_traj = False
 
 class OBJECT_OT_MainMenuButton(ButtonParentClass):
-    # """
-    # Button for adding a positioning sphere.
-    # """
+    """
+    Button to return to the main menu.
+    """
+
     bl_idname = "main.menu"
     bl_label = "Return to Main Menu"
 
     def execute(self, context):
         """
-        Moves the mesh as appropriate.
+        Runs when button pressed.
+
+        :param bpy_types.Context context: The context.
         """
 
         obj = context.object
 
-        try:  # So dumb that blender throws an error if it's already in object mode...
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except:
-            pass
+        # So dumb that blender throws an error if it's already in object
+        # mode...
+        try: bpy.ops.object.mode_set(mode='OBJECT')
+        except: pass
 
         for obj in bpy.data.objects:
             obj.select = False
         
         return {'FINISHED'}
 
-# class OBJECT_OT_LoadVMDFileButton(ButtonParentClass):
-#     # """
-#     # Button for adding a positioning sphere.
-#     # """
-#     bl_idname = "load.vmd_file"
-#     bl_label = "Load VMD File"
-
-#     def execute(self, context):
-#         """
-#         Moves the mesh as appropriate.
-#         """
-
-#         obj = context.object
-
-#         try:  # So dumb that blender throws an error if it's already in object mode...
-#             bpy.ops.object.mode_set(mode='OBJECT')
-#         except:
-#             pass
-
-#         if not os.path.exists(obj.vmd_executable):
-#             Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD executable doesn't exist!")
-#             return {'FINISHED'}
-        
-#         if not os.path.exists(obj.vmd_source_file):
-#             Messages.send_message("LOAD_VMD_FILE_MSG", "ERROR: VMD file doesn't exist!")
-#             return {'FINISHED'}
-
-#         tmp_dir = tempfile.mkdtemp() + os.sep
-#         vmd_script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + "vmd_scripts" + os.sep
-#         vmd_source_file = os.path.abspath(obj.vmd_source_file)
-
-#         if obj.vmd_source_file.upper().endswith("PDB"):
-#             # It's a pdb file
-#             open(tmp_dir + "vmd.vmd",'w').write(
-#                 open(vmd_script_dir + "pdb.vmd.template", 'r').read().replace(
-#                     "{PDB_FILENAME}", vmd_source_file
-#                 ).replace(
-#                     "{OUTPUT_DIR}", tmp_dir
-#                 )
-#             )
-#         else:
-#             # It's a vmd state file.
-#             open(tmp_dir + "vmd.vmd",'w').write(
-#                 "cd " + os.path.dirname(vmd_source_file) + "\n" +
-#                 open(vmd_source_file, 'r').read() + "\n" +
-#                 open(vmd_script_dir + "vmd.vmd.template", 'r').read().replace(
-#                     "{OUTPUT_DIR}", tmp_dir
-#                 )
-#             )
-        
-#         os.system('"' + obj.vmd_executable + '"' + " -dispdev text -e " + tmp_dir + "vmd.vmd")
-
-#         existing_obj_names = set([obj.name for obj in bpy.data.objects])
-#         for filename in glob.glob(tmp_dir + "*.obj"):
-#             bpy.ops.import_scene.obj(filepath=filename)
-#         new_obj_names = set([obj.name for obj in bpy.data.objects]) - existing_obj_names
-
-#         for obj_name in new_obj_names:
-#             print(obj_name)
-#             # Here process meshes to make better.
-
-#         shutil.rmtree(tmp_dir)
-
-#         print(tmp_dir)
-        
-#         return {'FINISHED'}
-
-# store keymaps here to access after registration
+# Store keymaps here to access after registration.
 addon_keymaps = []
 classes_used = [
     OBJECT_OT_LoadTrajButton,
@@ -905,9 +1090,7 @@ classes_used = [
     OBJECT_OT_StartOver,
     OBJECT_OT_RemoveAnimations,
     ProcessTrajectory,
-    OBJECT_OT_MainMenuButton,
-    # OBJECT_OT_LoadVMDFileButton,
-    OBJECT_OT_SetActive
+    OBJECT_OT_MainMenuButton
 ]
 
 ##### Registration functions #####
@@ -923,19 +1106,10 @@ def register():
     for c in classes_used:
         bpy.utils.register_class(c)
 
-    # # handle the keymap
-    # wm = bpy.context.window_manager
-    # km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
-    # kmi = km.keymap_items.new(Mineral.bl_idname, 'SPACE', 'PRESS', ctrl=True, shift=True)
-    # # kmi.properties.total = 4
-    # addon_keymaps.append(km)
-
 def unregister():
     """
     Good practice to make it possible to unregister addons.
     """
-
-    # bpy.utils.unregister_class(__name__)
 
     bpy.utils.unregister_class(Mineral)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
@@ -943,13 +1117,6 @@ def unregister():
     global classes_used
     for c in classes_used:
         bpy.utils.unregister_class(c)
-
-    # # handle the keymap
-    # wm = bpy.context.window_manager
-    # for km in addon_keymaps:
-    #     wm.keyconfigs.addon.keymaps.remove(km)
-    # # clear the list
-    # del addon_keymaps[:]
 
 if __name__ == "__main__":
     """

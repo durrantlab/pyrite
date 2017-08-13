@@ -64,6 +64,12 @@ class PanelParentClass(bpy.types.Panel):
         assert False, "You need to define a setup_properties() definition in your own Panel class!"
 
     def set_class_variables(self, context):
+        """
+        Set certain variables.
+
+        :param bpy_types.Context context: The context.
+        """
+
         self.obj = context.object
         self.scene = bpy.context.scene
         self.ui.parent = self
