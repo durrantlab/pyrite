@@ -1,7 +1,7 @@
-Mineral 
+Pyrite 
 =======
 
-"Mineral" is a program for importing a molecular dynamics trajectory into
+"Pyrite" is a program for importing a molecular dynamics trajectory into
 Blender, to take advantage of Blender's advanced rendering features. The basic
 steps are:
 
@@ -36,8 +36,8 @@ sys.path.append("/Users/jdurrant/Documents/Work/durrant_git/nivedita/blender_add
 Then import the module and register the plugin:
 
 ```
-import mineral
-mineral.register()
+import pyrite
+pyrite.register()
 ```
 
 If you make changes to the plugin, you need to reload the module and
@@ -45,12 +45,12 @@ reregister.:
 
 ```
 import imp
-imp.reload(mineral)
-mineral.register()
+imp.reload(pyrite)
+pyrite.register()
 ```
 
 Misc
 ====
 
-Note that the pymolecule version here is not necessarily the latest version.
+Note that the scoria version here is not necessarily the latest version.
 

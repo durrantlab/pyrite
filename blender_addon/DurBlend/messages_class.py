@@ -32,7 +32,7 @@ class MessagesClass():
         
         pass
 
-    def send_message(self, id, msg, duration=5.0, msg_otherwise=""):
+    def send_message(self, id, msg, duration=5.0, operator=None, msg_otherwise=""):
         """
         Save a message to be displayed in the panel.
 
@@ -52,6 +52,9 @@ class MessagesClass():
             "duration": duration,
             "msg_otherwise": msg_otherwise  # Not implemented...
         }
+
+        if operator is not None:
+            operator.report({"ERROR"}, msg)
 
     def display_message(self, id, panel):  
         """

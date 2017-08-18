@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import textwrap
+import bpy
+
 ##### Class for drawing UI elements #####
 class UI:
     """
@@ -42,7 +45,8 @@ class UI:
         """
 
         box = self.parent.layout.box()
-        box.label(label_txt)
+        if label_txt != "":
+            box.label(label_txt)
         self.row_context = box
 
     def new_row(self):
@@ -64,6 +68,59 @@ class UI:
 
         row = self.new_row()
         row.label(text=txt)
+
+    def multiline_label(self, txt="moose dog face", col_width=15):
+        """Never got this to work..."""
+        """
+        # Get width of current area.
+        areas = bpy.context.screen.areas
+        for i, a in enumerate(areas):
+            if (a.type == "VIEW_3D"):
+                aID = i
+            reg = a.regions
+            for ir, r in enumerate(reg):
+                if (r.type == "TOOL_PROPS"):
+                    rID = ir
+                    print(aID, rID, "MOO")
+        if ((aID >= 0) and (rID >= 0)):
+            width = areas[aID].regions[rID].width
+
+            # Determine the number of letters per line. For some reason, this
+            # doesn't seem to scale linearly. Also, I suspect this will depend
+            # on things like font size... oh well.
+            if width < 425:
+                pixels_per_letter = 20
+            elif width < 525:
+                pixels_per_letter = 17
+            elif width < 925:
+                pixels_per_letter = 15
+            else:
+                pixels_per_letter = 13
+            col_width = int(width / pixels_per_letter)
+        else:
+            # Couldn't get panel width... not sure what's going on... so just
+            # show label.
+            self.label(txt)
+            return
+
+        for line_index, line in enumerate(textwrap.wrap(txt, col_width)):
+            # num_spaces_to_add = col_width - len(line)
+            # half_num_spaces_to_add = 0.5 * num_spaces_to_add
+            # add_to_left = " " * int(half_num_spaces_to_add)
+            # if line_index % 2 == 1:
+            #     add_to_left = [" ", ""][int(0.5 * (line_index - 1)) % 2] + add_to_left
+
+            # line = (add_to_left + line).ljust(col_width)
+
+            row = self.new_row()
+            # print(dir(row))
+            # areas=bpy.context.screen.areas
+            # print(areas)
+            # p1 = row.split(percentage=10)
+            row.label(text=line)
+            row.scale_y = 0.55
+            # row.alignment='CENTER'
+        """
 
     def object_property(self, property_name="location"):
         """

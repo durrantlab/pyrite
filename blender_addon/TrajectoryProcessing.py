@@ -1,9 +1,26 @@
+# Pyrite is a Blender addon for visualization molecular dynamics simulations.
+# Copyright (C) 2017  Jacob D. Durrant
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import bpy
 import mathutils
 import numpy
 from . import scoria
 from .DurBlend import BackgroundJobParentClass
 from .DurBlend import Messages
+from . import globals
 
 try: import cStringIO as StringIO
 except: from io import StringIO
@@ -97,9 +114,9 @@ class ProcessTrajectory(BackgroundJobParentClass):
         The user cancels the job.
         """
 
-        global currently_loading_traj
+        # global currently_loading_traj
         bpy.ops.remove.animations('INVOKE_DEFAULT')
-        currently_loading_traj = False
+        globals.currently_loading_traj = False
 
     def get_frames(self):
         """
@@ -140,7 +157,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # is just to keep things organized.
         guide_empties = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
         guide_empties = bpy.context.object
-        guide_empties.name = "Mineral_GuideEmpties"
+        guide_empties.name = "Pyrite_GuideEmpties"
         self.guide_empties_location = numpy.mean(
             self.current_frame.get_coordinates(), 
             axis=0
@@ -151,7 +168,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         for index in self.selection_atoms_to_keep:
             empty = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
             empty = bpy.context.object
-            empty.name = "Mineral_empty" + str(index)
+            empty.name = "Pyrite_empty" + str(index)
             empty.parent = guide_empties
 
     def get_pruned_indecies(self):
@@ -168,7 +185,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.pruning_spheres.append((self.overall_pruning_stride, 0.0, 0.0, 0.0, 1e50))
 
         # Add individual spheres
-        for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("Mineral_highres_sphere__")]:
+        for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("Pyrite_highres_sphere__")]:
             x, y, z = list(sphere.location)
             r = 5.0 * sphere.scale.x  # Because radius is 5 at creation
             stride = sphere.sphere_pruning_stride
@@ -261,7 +278,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # coordinate.
         for coor_index, coor in enumerate(coors):
             si = sel[coor_index]
-            empty = bpy.data.objects["Mineral_empty" + str(si)]
+            empty = bpy.data.objects["Pyrite_empty" + str(si)]
             empty.location = coor - self.guide_empties_location
             empty.keyframe_insert(data_path='location')
 
@@ -270,18 +287,18 @@ class ProcessTrajectory(BackgroundJobParentClass):
         Setup the armature and bones.
         """
 
-        global currently_loading_traj
+        # global currently_loading_traj
 
         # Creating armature
         bpy.ops.object.add(type='ARMATURE', enter_editmode=True)
         object = bpy.context.object
-        object.name = 'Mineral_Armature'
+        object.name = 'Pyrite_Armature'
         armature = object.data
         armature.name = 'Frame'
 
         # Add bones
         for index in self.selection_atoms_to_keep:
-            bone_name = 'Mineral_bone' + str(index)
+            bone_name = 'Pyrite_bone' + str(index)
             bone = armature.edit_bones.new(bone_name)
             bone.head = (0, 0, 0)
             bone.tail = (0, 0, 2)
@@ -292,12 +309,12 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # Now constrain them to the locations of the empty objects (which are
         # animated).
         bpy.ops.object.mode_set(mode='POSE')
-        armature = bpy.data.objects["Mineral_Armature"]
+        armature = bpy.data.objects["Pyrite_Armature"]
 
         for index in self.selection_atoms_to_keep:
-            bone = armature.pose.bones['Mineral_bone' + str(index)]
+            bone = armature.pose.bones['Pyrite_bone' + str(index)]
             constraint = bone.constraints.new(type="COPY_LOCATION")
-            constraint.target = bpy.data.objects["Mineral_empty" + str(index)]
+            constraint.target = bpy.data.objects["Pyrite_empty" + str(index)]
 
         # Now make sure the pose at frame 0 is set as the rest pose (so you
         # can do automatic weights later...)
@@ -315,8 +332,8 @@ class ProcessTrajectory(BackgroundJobParentClass):
         try: bpy.ops.object.mode_set(mode='OBJECT')
         except: pass
         
-        bpy.context.scene.objects.active = bpy.data.objects['Mineral_Armature']
+        bpy.context.scene.objects.active = bpy.data.objects['Pyrite_Armature']
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
         # No longer running
-        currently_loading_traj = False
+        globals.currently_loading_traj = False

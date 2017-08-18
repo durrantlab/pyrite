@@ -1,9 +1,20 @@
-"""
-Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
-"""
+# Copyright 2017 Jacob D. Durrant
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import absolute_import
 from __future__ import print_function
-from . import dumbpy as numpy
+from scoria import dumbpy as numpy
 import os
 import sys
 from .six.moves import range
@@ -18,7 +29,7 @@ import tempfile
 try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3
 
-from . import Molecule
+import scoria
 
 class FileIO():
     """A class for saving and loading molecular data into a scoria.Molecule
@@ -242,17 +253,20 @@ class FileIO():
         # Now merge the last two columns.
         atom_inf = self.__parent_molecule.get_atom_information()
 
-        atom_types = numpy.defchararray_add(
-            atom_inf["element"], atom_inf["charge"]
-        )
+        # In some instances, the atom information value can be None
+        if atom_inf is not None:
 
-        atom_inf["element"] = numpy.defchararray_strip(atom_types)
+            atom_types = numpy.defchararray_add(
+                atom_inf["element"], atom_inf["charge"]
+            )
 
-        atom_inf["charge"] = "\n"
+            atom_inf["element"] = numpy.defchararray_strip(atom_types)
 
-        atom_inf["element_padded"] = numpy.defchararray_rjust(
-            atom_inf["element"], 2
-        )
+            atom_inf["charge"] = "\n"
+
+            atom_inf["element_padded"] = numpy.defchararray_rjust(
+                atom_inf["element"], 2
+            )
 
         self.__parent_molecule.set_atom_information(atom_inf)
 
@@ -374,7 +388,7 @@ class FileIO():
             else:
                 # subsequent frames, load it into a tmp molecule and copy over
                 # the coordinates.
-                tmp_mol = Molecule()
+                tmp_mol = scoria.Molecule()
                 tmp_mol.load_pdb_into_using_file_object(
                     str_file_obj, bonds_by_distance = False, 
                     serial_reindex = False, resseq_reindex = False,
@@ -444,8 +458,9 @@ class FileIO():
 
         if is_trajectory == True:
             self.load_pdb_trajectory_into_using_file_object(
-                file_obj, bonds_by_distance = False, serial_reindex = True,
-                resseq_reindex = False
+                file_obj, bonds_by_distance = bonds_by_distance,
+                serial_reindex = serial_reindex, resseq_reindex =
+                resseq_reindex
             )
             return
 
@@ -997,63 +1012,33 @@ class FileIO():
 
     def load_MDAnalysis_into(self, *args):
         """
+        ***Note this function is only functional in Scoria_MDA***
+
         Allows import of molecular structure with MDAnalysis.
-
+    
         Requires the :any:`MDAnalysis <MDAnalysis.core.AtomGroup>` library.
-
+    
         Should be called via the wrapper function
         :meth:`~scoria.Molecule.Molecule.load_MDAnalysis_into`
-
+    
         :params \*args: Filename, filenames, or list of file names. Used to
             inizalize a MDAnalysis.Universe object.
-
+    
         """
-        # Throwing an informative error for missing module.
-        if "MDAnalysis" not in sys.modules:
-            raise ImportError("The MDAnalysis Module is not available.")
-
-        # Initializing the MDAnalysis universe with the suppplied args
-        universe = numpy.mda.Universe(*args)
-
-        self.load_MDAnalysis_into_using_universe_object(universe)
-
-        self.__parent_molecule.set_filename(args)
-
+        print("Compatibility with MDAnalysis objects is not supported in this version.")
+    
     def load_MDAnalysis_into_using_universe_object(self, universe):
         """
+        ***Note this function is only functional in Scoria_MDA***
+        
         Allows import of molecular structure from an MDAnalysis object.
-
+    
         Requires the :any:`MDAnalysis <MDAnalysis.core.AtomGroup>` library.
-
+    
         Should be called via the wrapper function
         :meth:`~scoria.Molecule.Molecule.load_MDAnalysis_into`
-
+    
         :param mdanalysis.universe universe: An MDAnalysis universe object to
             import.
         """
-
-        # Throwing an informative error for missing module.
-        if not numpy.class_dependency("load MDAnalysis into", "MDANALYSIS"):
-            return
-
-        # Initializing the MDAnalysis universe with the suppplied args
-        self.__u = universe
-
-        # Writing to and reading from a temporary PDB file for atom information
-        fileDescriptor, tempPDB = tempfile.mkstemp(".PDB")
-        try:
-            self.__u.atoms.write(tempPDB)
-            self.load_pdb_into(tempPDB)
-        finally:
-            os.remove(tempPDB)
-
-        # Converting the MDA.trajectory data structure to our structure
-        trajectoryList = []
-        for frame in self.__u.trajectory:
-            frameList = []
-            for coord in frame:
-                coordList = numpy.vstack(coord).T
-                frameList.append(coordList)
-            trajectoryList.append(numpy.vstack(frameList))
-
-        self.__parent_molecule.set_trajectory_coordinates(trajectoryList)
+        print("Compatibility with MDAnalysis objects is not supported in this version.")

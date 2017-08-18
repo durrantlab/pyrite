@@ -1,4 +1,4 @@
-# Mineral is a Blender addon for visualization molecular dynamics simulations.
+# Pyrite is a Blender addon for visualization molecular dynamics simulations.
 # Copyright (C) 2017  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@ import bpy
 from bpy import context
 from mathutils import Vector
 import os
+import math
+from bpy.props import *
 
 from .DurBlend import Properties
 from .DurBlend import UI
@@ -25,30 +27,30 @@ from .DurBlend import PanelParentClass
 from .DurBlend import ButtonParentClass
 from .DurBlend import Messages
 from .TrajectoryProcessing import ProcessTrajectory
+from . import globals
 
 bl_info = {
-    "name": "Mineral",
-    "author" : "Name <name@example.com>",
+    "name": "Pyrite",
+    "author" : "Jacob Durrant <durrantj@pitt.edu>",
     "version" : (1, 0, 0),
     "blender" : (2, 5, 7),
-    "location" : "View 3D > ",
-    "description" : "Mineral plugin",
+    "location" : "View 3D > Tools Panel",
+    "description" : "Pyrite plugin",
     "warning" : "",
     "wiki_url" : "",
     "tracker_url" : "",
-    "category": "Object",
+    "category": "3D View",
 }
 
 ###### Below specific to this plugin ######
-currently_loading_traj = False
 
-
-class Mineral(PanelParentClass):
-    """Mineral"""
-    bl_label = "Mineral"
-    bl_idname = "object.mineral"
+class Pyrite(PanelParentClass):
+    """Pyrite"""
+    bl_label = "Pyrite"
+    bl_idname = "object.pyrite"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
+    bl_category = "Pyrite"
 
     @classmethod
     def setup_properties(self):
@@ -59,9 +61,56 @@ class Mineral(PanelParentClass):
 
         # Set up scene and object properties.
         bpy.types.Object.pdb_filename = self.prop_funcs.strProp("PDB file", "sample.pdb", 'FILE_PATH')
-        bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every n frames", 1, 100, 2)
-        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 5)
-        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Keep every n atoms", 1, 100, 2)
+        bpy.types.Object.frame_stride = self.prop_funcs.intProp("Keep every nth frame", 1, 100, 2)
+        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp("Keep every nth atom", 1, 100, 5)
+
+        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp("Keep every nth atom", 1, 100, 2)       
+        
+        def update_func_sphere_x(self, context):
+            obj = context.object
+            obj.location.x = obj.sphere_x_loc
+
+        def update_func_sphere_y(self, context):
+            obj = context.object
+            obj.location.y = obj.sphere_y_loc
+
+        def update_func_sphere_z(self, context):
+            obj = context.object
+            obj.location.z = obj.sphere_z_loc
+
+        def update_func_sphere_scale(self, context):
+            obj = context.object
+            obj.scale.x = obj.sphere_scale
+            obj.scale.y = obj.sphere_scale
+            obj.scale.z = obj.sphere_scale
+
+        # Set any coordinates if necessary
+        # print("moo", obj_to_use.sphere_x_loc)
+        # if round(obj_to_use.sphere_x_loc, 2) == -9999.99:
+            # obj_to_use.sphere_x_loc = bpy.context.scene.objects.active.location.x
+        # try:
+        # print(dir(bpy.context))
+        # print("moo", bpy.context.scene.objects.active.location.x)
+        # except: pass
+
+        bpy.types.Object.sphere_x_loc = self.prop_funcs.floatProp("X", -10000, 10000, -9999.99, update=update_func_sphere_x)
+        bpy.types.Object.sphere_y_loc = self.prop_funcs.floatProp("Y", -10000, 10000, -9999.99, update=update_func_sphere_y)
+        bpy.types.Object.sphere_z_loc = self.prop_funcs.floatProp("Z", -10000, 10000, -9999.99, update=update_func_sphere_z)
+        bpy.types.Object.sphere_scale = self.prop_funcs.floatProp("Scale", 0, 100, 1, update=update_func_sphere_scale)
+
+        # bpy.types.Object.sphere_z_loc = self.prop_funcs.floatProp("Z", -10000, 10000, -9999.99, update=update_func_sphere_z)
+
+
+        # def update1(self, context):
+        #     print("hi")
+
+        # FloatProperty(
+        #     name="location",
+        #     min=-10000, max=10000,
+        #     default=0,
+        #     description="A float between " + str(min) + " and " + str(max),
+        #     update=update1
+        # )
 
     def draw(self, context):
         """
@@ -75,7 +124,7 @@ class Mineral(PanelParentClass):
         :param bpy_types.Context context: The context.
         """
 
-        global currently_loading_traj
+        # global currently_loading_traj
         
         self.set_class_variables(context)
 
@@ -86,7 +135,7 @@ class Mineral(PanelParentClass):
         
         # Consider the possibility that a trajectory is current being
         # loaded... If so, panel should only indicate progress.
-        if currently_loading_traj:
+        if globals.currently_loading_traj:
             self.draw_loading_trajectory()
             return
 
@@ -128,22 +177,22 @@ class Mineral(PanelParentClass):
         # What object name to use in the panel title?
         obj_to_use_name = (
             obj_to_use.name   
-            if not obj_to_use.name.startswith("Mineral_highres_sphere__")
+            if not obj_to_use.name.startswith("Pyrite_highres_sphere__")
             else obj_to_use.name.split("__")[1]
         )
 
-        if obj_to_use.name.startswith("Mineral_highres_sphere__"):
+        if obj_to_use.name.startswith("Pyrite_highres_sphere__"):
             # It's one of the selection spheres... Provide info/options about
-            # that to the user.
+            # the sphere to the user.
             self.draw_high_detail_sphere_panel()
         else:
             # It's not one of the selection spheres. Must be a protein mesh.
             self.draw_protein_mesh_header(obj_to_use_name)
 
             # Check if the location of the object is ok.
-            loc = [round(v, 1) for v in list(obj_to_use.location)]
-            rot = [round(v, 1) for v in list(obj_to_use.rotation_euler)]
-            scale = [round(v, 1) for v in list(obj_to_use.scale)]
+            loc = [v for v in list(obj_to_use.location)]
+            rot = [v for v in list(obj_to_use.rotation_euler)]
+            scale = [v for v in list(obj_to_use.scale)]
             if loc != [0.0, 0.0, 0.0] or rot != [0.0, 0.0, 0.0] or scale != [1.0, 1.0, 1.0]:
                 # The selected mesh must not have location, rotation, and scale at rest.
                 self.draw_object_coordinates_not_set_error(loc, rot, scale)
@@ -172,7 +221,7 @@ class Mineral(PanelParentClass):
         # start over.
         previous_run_exists = False
         for obj in bpy.data.objects:
-            if obj.name.startswith("Mineral_"):
+            if obj.name.startswith("Pyrite_"):
                 previous_run_exists = True
                 break
 
@@ -194,7 +243,7 @@ class Mineral(PanelParentClass):
 
         # Make sure they know what to cite!
         self.ui.use_box_row("Citation")
-        self.ui.label("If you use Mineral, please cite:")
+        self.ui.label("If you use Pyrite, please cite:")
         self.ui.label("{FULL CITATION HERE}")
 
     def draw_high_detail_sphere_panel(self):
@@ -207,8 +256,25 @@ class Mineral(PanelParentClass):
         self.ui.use_layout_row()
         self.ui.label("High-Detail Region")
         self.ui.use_box_row("Properties")
-        self.ui.label("Move/scale the sphere to encompass the region.")
+        # self.ui.label("Move/scale the sphere to encompass the region.")
+
         self.ui.object_property(property_name="sphere_pruning_stride")
+        self.ui.object_property(property_name="sphere_x_loc")
+        self.ui.object_property(property_name="sphere_y_loc")
+        self.ui.object_property(property_name="sphere_z_loc")
+        self.ui.object_property(property_name="sphere_scale")
+
+        # self.ui.object_property(property_name="location_x")
+
+
+        # self.ui.object_property(property_name="location")
+        # *******
+        
+
+
+
+        # self.ui.object_property(property_name="location")
+
         Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
         self.ui.use_box_row("Finalize")
         self.ui.ops_button(
@@ -252,14 +318,15 @@ class Mineral(PanelParentClass):
         """
 
         # The selected mesh must not have location, rotation, and scale at rest.
-        self.ui.use_box_row("Trajectory and Protein-Mesh Positions Must Match!")
+        self.ui.use_box_row("Trajectory and protein-mesh transforms must match!")
+        self.ui.label("Fix before continuing...")
         if loc != [0.0, 0.0, 0.0]:
-            self.ui.label("Mesh location " + str(loc) + " is not [0.0, 0.0, 0.0]")
+            self.ui.label("Mesh location is not [0.0, 0.0, 0.0]")
         if rot != [0.0, 0.0, 0.0]:
-            self.ui.label("Mesh rotation " + str(rot) + " is not [0.0, 0.0, 0.0]")
-        if scale != [0.0, 0.0, 0.0]:
-            self.ui.label("Mesh scaling " + str(scale) + " is not [1.0, 1.0, 1.0]")
-        self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Fix (Move) Mesh Position")
+            self.ui.label("Mesh rotation is not [0.0, 0.0, 0.0]")
+        if scale != [1.0, 1.0, 1.0]:
+            self.ui.label("Mesh scaling is not [1.0, 1.0, 1.0]")
+        self.ui.ops_button(rel_data_path="default.locrotscale", button_label="Auto-Fix Position/Rotation/Scale")
 
     def draw_main_protein_mesh_panel(self):
         """
@@ -279,7 +346,7 @@ class Mineral(PanelParentClass):
         self.ui.use_box_row("High-Detail Regions")
 
         # Go through and find the high-detail regions, list them.
-        spheres = [obj for obj in bpy.data.objects if obj.name.startswith("Mineral_highres_sphere__")]
+        spheres = [obj for obj in bpy.data.objects if obj.name.startswith("Pyrite_highres_sphere__")]
         for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
             self.ui.ops_button(rel_data_path="select.sphere" + str(i), button_label="Sphere #" + str(i + 1) + " (Keep Every " + str(obj.sphere_pruning_stride) + " Atoms)")
 
@@ -296,12 +363,12 @@ class Mineral(PanelParentClass):
 
 def menu_func(self, context):
     """
-    Adds Mineral to Blender's menu system.
+    Adds Pyrite to Blender's menu system.
 
     :param bpy_types.Context context: The context.
     """
 
-    self.layout.operator(Mineral.bl_idname)
+    self.layout.operator(Pyrite.bl_idname)
 
 
 class OBJECT_OT_LoadTrajButton(ButtonParentClass):
@@ -329,18 +396,22 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
         :param bpy_types.Context context: The context.
         """
 
-        global currently_loading_traj
+        # global currently_loading_traj
 
         obj = context.object
 
         # Check to make sure filename exists
         if not os.path.exists(obj.pdb_filename):
-            Messages.send_message("TRAJ_FILENAME_DOESNT_EXIST", "ERROR: Trajectory filename doesn't exist!")
+            Messages.send_message(
+                "TRAJ_FILENAME_DOESNT_EXIST", 
+                "Trajectory filename doesn't exist!",
+                operator=self
+            )
         else:
             # Trajectory filename does exist, so load it...
             self.frame_stride = obj.frame_stride
             self.overall_pruning_stride = obj.overall_pruning_stride
-            currently_loading_traj = True
+            globals.currently_loading_traj = True
             bpy.ops.process.trajectory('INVOKE_DEFAULT')
 
         return {'FINISHED'}
@@ -413,20 +484,28 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             sphere = bpy.context.scene.objects.active
 
             # Pick sphere name, making sure not already used.
-            sphere_name = "Mineral_highres_sphere__" + obj.name + "__" + str(0)
+            sphere_name = "Pyrite_highres_sphere__" + obj.name + "__" + str(0)
             i = 0
             while sphere_name in bpy.data.objects.keys():
                 i = i + 1
-                sphere_name = "Mineral_highres_sphere__" + obj.name + "__" + str(i)
+                sphere_name = "Pyrite_highres_sphere__" + obj.name + "__" + str(i)
 
             sphere.name = sphere_name
+            sphere.sphere_x_loc = sphere.location.x
+            sphere.sphere_y_loc = sphere.location.y
+            sphere.sphere_z_loc = sphere.location.z
+            sphere.sphere_scale = sphere.scale.x
 
             # The sphere should be wireframe (to see into).
             bpy.ops.object.modifier_add(type='WIREFRAME')
             sphere.modifiers["Wireframe"].thickness = 0.2
         else:
             # The 3D cursor is not near the selected mesh, so throw an error...
-            Messages.send_message("SELECT_SPHERE", "ERROR: Click on protein mesh to position 3D cursor!")
+            Messages.send_message(
+                "SELECT_SPHERE", 
+                "Click on protein mesh to position 3D cursor!",
+                operator=self
+            )
         return{'FINISHED'}
 
 
@@ -445,15 +524,26 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         :param bpy_types.Context context: The context.
         """
 
-        # Figure out what the protein mesh is.
         obj = context.object
+
+        # Set the coordinates.
+        obj.sphere_x_loc = obj.location.x
+        obj.sphere_y_loc = obj.location.y
+        obj.sphere_z_loc = obj.location.z
+        obj.sphere_scale = obj.scale.x
+
+        # Figure out what the protein mesh is.
         protein_mesh_name = obj.name.split("__")[1]
         protein_mesh = bpy.data.objects[protein_mesh_name]
 
         # Make sure sphere pruning factor is less than whole protein pruning
         if protein_mesh.overall_pruning_stride < obj.sphere_pruning_stride:
             # It isn't, so throw an error.
-            Messages.send_message("SPHERE_STRIDE_TOO_HIGH", "ERROR: Value too big. Set <= " + str(protein_mesh.overall_pruning_stride) + " (general value).")
+            Messages.send_message(
+                "SPHERE_STRIDE_TOO_HIGH", 
+                "Coarse-graining too high (" + str(obj.sphere_pruning_stride) + "). Set <= " + str(protein_mesh.overall_pruning_stride) + ".",
+                operator=self
+            )
         else:
             # It is, so switch back to the protein mesh.
             for obj in bpy.data.objects: obj.select = False
@@ -513,7 +603,7 @@ class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
         """
         
         # Get the sphere
-        spheres = [obj for obj in bpy.data.objects if obj.name.startswith("Mineral_highres_sphere__")]
+        spheres = [obj for obj in bpy.data.objects if obj.name.startswith("Pyrite_highres_sphere__")]
         sphere = spheres[index]
 
         # Make that sphere selected and active.
@@ -711,7 +801,7 @@ class OBJECT_OT_StartOver(ButtonParentClass):
         # Delete anything object that starts with the plugin's name.
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
-            if obj.name.startswith("Mineral_"):
+            if obj.name.startswith("Pyrite_"):
                 obj.select = True
                 bpy.ops.object.delete()
 
@@ -739,8 +829,8 @@ class OBJECT_OT_RemoveAnimations(ButtonParentClass):
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
             if (
-                obj.name.startswith("Mineral_") and 
-                not obj.name.startswith("Mineral_highres_sphere__")
+                obj.name.startswith("Pyrite_") and 
+                not obj.name.startswith("Pyrite_highres_sphere__")
             ):
                 obj.select = True
                 bpy.ops.object.delete()
@@ -755,7 +845,7 @@ class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
     """
 
     bl_idname = "default.locrotscale"
-    bl_label = "Fix (Move) Mesh Position"
+    bl_label = "Auto-Fix Position/Rotation/Scale"
 
     def execute(self, context):
         """
@@ -849,8 +939,8 @@ def register():
     """
     Registers this addon.
     """
-    Mineral.start()
-    bpy.utils.register_class(Mineral)
+    Pyrite.start()
+    bpy.utils.register_class(Pyrite)
     bpy.types.VIEW3D_MT_object.append(menu_func)
 
     global classes_used
@@ -862,7 +952,7 @@ def unregister():
     Good practice to make it possible to unregister addons.
     """
 
-    bpy.utils.unregister_class(Mineral)
+    bpy.utils.unregister_class(Pyrite)
     bpy.types.VIEW3D_MT_object.remove(menu_func)
 
     global classes_used

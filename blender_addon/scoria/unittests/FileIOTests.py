@@ -1,6 +1,17 @@
-"""
-Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
-"""
+# Copyright 2017 Jacob D. Durrant
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import absolute_import
 import unittest
 import os
@@ -9,9 +20,6 @@ import shutil
 
 #import numpy as np
 from scoria import dumbpy as np
-
-try: import MDAnalysis  # pypy shouldn't be able to load this.
-except: pass
 
 import scoria
 import shutil
@@ -55,6 +63,7 @@ class FileIOTests(unittest.TestCase):
         """
         pass
 
+    @unittest.skip("Need to implement")
     def test_load_pym_into(self):
         """
         Testing the ability of the FileIO module to import pym files.
@@ -155,36 +164,6 @@ class FileIOTests(unittest.TestCase):
 
             self.assertEqual(self.mol.get_total_number_of_atoms(), 401)
             self.assertEqual(self.mol.get_remarks(), [" This is a remark."])
-
-    def test_load_MDAnalysis_into(self):
-        """
-        Empty test.
-        """
-        test_dcd = self.info_path + 'single_frame.dcd'
-        test_psf = self.info_path + 'single_frame.psf'
-
-        self.mol.load_MDAnalysis_into(test_psf, test_dcd)
-
-        self.assertEqual(self.mol.get_total_number_of_atoms(), 401)
-        self.assertEqual(self.mol.get_remarks()[0:2],
-                         ['     Created by DCD plugin\x00',
-                          '     \x00\x00\x00REMARKS Created 03 January, 2017 at'])
-
-    def test_load_MDAnalysis_into_using_universe_object(self):
-        """
-        Empty test.
-        """
-        test_dcd = self.info_path + 'single_frame.dcd'
-        test_psf = self.info_path + 'single_frame.psf'
-
-        universe = MDAnalysis.Universe(test_psf, test_dcd)
-
-        self.mol.load_MDAnalysis_into_using_universe_object(universe)
-
-        self.assertEqual(self.mol.get_total_number_of_atoms(), 401)
-        self.assertEqual(self.mol.get_remarks()[0:2],
-                         ['     Created by DCD plugin\x00',
-                          '     \x00\x00\x00REMARKS Created 03 January, 2017 at'])
 
     # Test Save functions
 

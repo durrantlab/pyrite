@@ -1,6 +1,17 @@
-"""
-Copyright (c) 2017 Jacob Durrant. MIT license. Please see LICENSE.txt for full details.
-"""
+# Copyright 2017 Jacob D. Durrant
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import absolute_import
 from __future__ import print_function
 from scoria.Molecule import Molecule
@@ -10,7 +21,7 @@ try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3
 
 import os
-from . import dumbpy as numpy
+from scoria import dumbpy as numpy
 import inspect
 from time import time
 import shutil
@@ -374,14 +385,14 @@ class Test:
         mol2.translate_molecule(numpy.array([10.0, 10.0, 10.0]))
 
         # Temporarily commented out because no dumbpy implementation needed.
-        print("    steric_clash_with_another_molecules()")
+        print("    steric_clash_with_another_molecule()")
         print(("        " + str(mol1.steric_clash_with_another_molecules(mol2, 5.0, False))))
         print(("        " + str(mol1.steric_clash_with_another_molecules(mol2, 5.0, True))))
 
         # Temporarily commented out because no dumbpy implementation needed.
-        print("    get_distance_to_another_molecules()")
-        print(("        " + str(mol1.get_distance_to_another_molecules(mol2, False))))
-        print(("        " + str(mol1.get_distance_to_another_molecules(mol2, True))))
+        print("    get_distance_to_another_molecule()")
+        print(("        " + str(mol1.get_distance_to_another_molecule(mol2, False))))
+        print(("        " + str(mol1.get_distance_to_another_molecule(mol2, True))))
 
         print("    get_rmsd_order_dependent()")
         print(("        " + str(mol1.get_rmsd_order_dependent(mol2))))
