@@ -84,33 +84,10 @@ class Pyrite(PanelParentClass):
             obj.scale.y = obj.sphere_scale
             obj.scale.z = obj.sphere_scale
 
-        # Set any coordinates if necessary
-        # print("moo", obj_to_use.sphere_x_loc)
-        # if round(obj_to_use.sphere_x_loc, 2) == -9999.99:
-            # obj_to_use.sphere_x_loc = bpy.context.scene.objects.active.location.x
-        # try:
-        # print(dir(bpy.context))
-        # print("moo", bpy.context.scene.objects.active.location.x)
-        # except: pass
-
         bpy.types.Object.sphere_x_loc = self.prop_funcs.floatProp("X", -10000, 10000, -9999.99, update=update_func_sphere_x)
         bpy.types.Object.sphere_y_loc = self.prop_funcs.floatProp("Y", -10000, 10000, -9999.99, update=update_func_sphere_y)
         bpy.types.Object.sphere_z_loc = self.prop_funcs.floatProp("Z", -10000, 10000, -9999.99, update=update_func_sphere_z)
         bpy.types.Object.sphere_scale = self.prop_funcs.floatProp("Scale", 0, 100, 1, update=update_func_sphere_scale)
-
-        # bpy.types.Object.sphere_z_loc = self.prop_funcs.floatProp("Z", -10000, 10000, -9999.99, update=update_func_sphere_z)
-
-
-        # def update1(self, context):
-        #     print("hi")
-
-        # FloatProperty(
-        #     name="location",
-        #     min=-10000, max=10000,
-        #     default=0,
-        #     description="A float between " + str(min) + " and " + str(max),
-        #     update=update1
-        # )
 
     def draw(self, context):
         """

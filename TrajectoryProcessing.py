@@ -132,8 +132,6 @@ class ProcessTrajectory(BackgroundJobParentClass):
             line = pdb_file.readline()
             current_pdb_frame_lines.append(line)
             if line.strip() in ["END", "ENDMDL"]:
-                print("Frame", current_frame)
-
                 mol = scoria.Molecule()
                 mol.load_pdb_into_using_file_object(
                     StringIO("".join(current_pdb_frame_lines)),
