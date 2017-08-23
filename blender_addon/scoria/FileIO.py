@@ -14,7 +14,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-from scoria import dumbpy as numpy
+from . import dumbpy as numpy
 import os
 import sys
 from .six.moves import range
@@ -29,7 +29,7 @@ import tempfile
 try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3
 
-import scoria
+from . import Molecule
 
 class FileIO():
     """A class for saving and loading molecular data into a scoria.Molecule
@@ -388,7 +388,7 @@ class FileIO():
             else:
                 # subsequent frames, load it into a tmp molecule and copy over
                 # the coordinates.
-                tmp_mol = scoria.Molecule()
+                tmp_mol = Molecule()
                 tmp_mol.load_pdb_into_using_file_object(
                     str_file_obj, bonds_by_distance = False, 
                     serial_reindex = False, resseq_reindex = False,

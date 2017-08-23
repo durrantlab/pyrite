@@ -13,8 +13,8 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from scoria import dumbpy as numpy
-from .FileIO import FileIO
+from . import dumbpy as numpy
+from . import FileIO
 from .AtomsAndBonds import AtomsAndBonds
 from .Selections import Selections
 from .Manipulation import Manipulation
@@ -45,7 +45,7 @@ class Molecule: # here's the actual Molecule class
             will be input with the method indicated by the fileType parameter.
         """
 
-        self.fileio = FileIO(self)
+        self.fileio = FileIO.FileIO(self)
         self.atoms_and_bonds = AtomsAndBonds(self)
         self.selections = Selections(self)
         self.manipulation = Manipulation(self)

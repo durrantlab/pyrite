@@ -14,14 +14,14 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-from scoria.Molecule import Molecule
+from .Molecule import Molecule
 from .six.moves import range
 
 try: import cStringIO as StringIO  # python2
 except: from io import StringIO  # python3
 
 import os
-from scoria import dumbpy as numpy
+from . import dumbpy as numpy
 import inspect
 from time import time
 import shutil

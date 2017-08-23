@@ -14,8 +14,8 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-from scoria import dumbpy as numpy
-from scoria.Quaternion import Quaternion
+from . import dumbpy as numpy
+from .Quaternion import Quaternion
 
 
 class OtherMolecules():
