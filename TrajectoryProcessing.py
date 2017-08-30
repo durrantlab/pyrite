@@ -30,7 +30,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
     A class to load and process a molecular dynamics trajectory.
     """
     
-    bl_idname = "process.trajectory"
+    bl_idname = "pyrite.process_trajectory"
 
     def setup(self, context, event):
         """
@@ -115,7 +115,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         """
 
         # global currently_loading_traj
-        bpy.ops.remove.animations('INVOKE_DEFAULT')
+        bpy.ops.pyrite.remove_animations('INVOKE_DEFAULT')
         globals.currently_loading_traj = False
 
     def get_frames(self):
@@ -183,7 +183,10 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.pruning_spheres.append((self.overall_pruning_stride, 0.0, 0.0, 0.0, 1e50))
 
         # Add individual spheres
-        for sphere in [obj for obj in bpy.data.objects if obj.name.startswith("Pyrite_highres_sphere__")]:
+        for sphere in [
+            obj for obj in bpy.data.objects 
+            if obj.name.startswith("Pyrite_highres_sphere__")
+        ]:
             x, y, z = list(sphere.location)
             r = 5.0 * sphere.scale.x  # Because radius is 5 at creation
             stride = sphere.sphere_pruning_stride
@@ -191,7 +194,8 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         # Make a kd tree if needed
         coors = self.current_frame.get_coordinates()  # So kdtree calculated on
-                                                      # coordinates of first frame only.
+                                                      # coordinates of first 
+                                                      # frame only.
         # Create kd-tree containing atom/bone coordinates
         kdtree = mathutils.kdtree.KDTree(len(coors))
         bone_list = []
@@ -214,25 +218,34 @@ class ProcessTrajectory(BackgroundJobParentClass):
             atom_stride, center_x, center_y, center_z, radius = sphere
             co_find = (center_x, center_y, center_z)
             coors_in_sphere = kdtree.find_range(co_find, radius)
-            # coors_in_sphere looks like this:
-            # (Vector((-26.695999145507812, -92.79199981689453, 389.52801513671875)), 777, 10.07503890991211)
+            # coors_in_sphere looks like this: (Vector((-26.695999145507812,
+            # -92.79199981689453, 389.52801513671875)), 777,
+            # 10.07503890991211)
 
             # Just keep the indices in this sphere
             indices_in_this_sphere = set([])
             for coor in coors_in_sphere:
                 indices_in_this_sphere.add(int(coor[1]))
             
-            # Remove from the ones in this sphere ones that were in previous spheres
-            indices_to_keep = indices_in_this_sphere - indices_in_previous_spheres
+            # Remove from the ones in this sphere ones that were in previous
+            # spheres
+            indices_to_keep = (indices_in_this_sphere - 
+                               indices_in_previous_spheres)
 
             # Update indices_in_previous_spheres
-            indices_in_previous_spheres = indices_in_previous_spheres.union(indices_to_keep)
+            indices_in_previous_spheres = indices_in_previous_spheres.union(
+                indices_to_keep
+            )
 
             # Now only keep every few of the indices_to_keep
-            indices_to_keep_sparce = numpy.array(list(indices_to_keep))[::atom_stride]
+            indices_to_keep_sparce = numpy.array(
+                list(indices_to_keep)
+            )[::atom_stride]
 
             # Update all the totals
-            total_indices_to_keep = total_indices_to_keep.union(set(indices_to_keep_sparce))
+            total_indices_to_keep = total_indices_to_keep.union(
+                set(indices_to_keep_sparce)
+            )
 
         # Keep track of the atomic indecies to keep.
         total_indices_to_keep = list(total_indices_to_keep)
@@ -240,7 +253,9 @@ class ProcessTrajectory(BackgroundJobParentClass):
         total_indices_to_keep = numpy.array(total_indices_to_keep)
         self.selection_atoms_to_keep = total_indices_to_keep
         for i in range(self.frame_stride):
-            self.selection_atoms_to_keep_with_offset[i] = total_indices_to_keep[i::self.frame_stride]
+            self.selection_atoms_to_keep_with_offset[i] = (
+                total_indices_to_keep[i::self.frame_stride]
+            )
 
     def position_empties_at_atom_locs(self, position_all=False):
         """
