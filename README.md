@@ -9,6 +9,31 @@ the terms of the GNU General Public License Version 3.
 
 If you use Pyrite, please cite our paper: [CITATION HERE]()
 
+Installation
+============
+
+Pyrite installation within Blender is the same as with any Blender plugin:
+
+1. Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to
+   download the Pyrite ZIP file. 
+2. Within Blender, click on the ```File > User Preferences...``` menu item to
+   open the ```Blender User Preferences``` window. 
+3. Click the ```Add-ons``` button at the top of that window to open the
+   add-ons panel. 
+4. Specify the location of the downloaded ZIP file by clicking on the
+   ```Install Add-on from File...``` button at the bottom of the window. 
+5. Once installed, click the ```3D View: Pyrite``` checkbox to activate the
+   plugin. 
+6. To keep the plugin active after Blender restarts, click the ```Save User
+   Settings``` button at the bottom of the window.
+
+
+Authors and Contacts
+====================
+
+Pyrite was produced by Jacob Durrant
+([durrantj@pitt.edu](mailto:durrantj@pitt.edu)) with the assistance of Nivi
+Rajendiran.
 
 Tutorial
 ========
