@@ -33,7 +33,7 @@ class Properties:
     definition in this class.
     """
 
-    def intProp(self, txt, min=-100, max=100, default=33, update=nothing):
+    def intProp(self, txt, min=-100, max=100, default=33, update=nothing, description=""):
         """
         Define an integer property.
 
@@ -53,19 +53,23 @@ class Properties:
                     updated. Defaults to the nothing function defined above,
                     which does nothing.
 
+        :param str description: A description of this property.
+
         :returns: a dictionary with the specified values.
         :rtype: :class:`str`  # What is this line?
         """
+
+        description = ("An integer between " + str(min) + " and " + str(max)) if description == "" else description
 
         return IntProperty(
             name=txt,
             min=min, max=max,
             default=default,
-            description="An integer between " + str(min) + " and " + str(max),
+            description=description,
             update=update
         )
 
-    def floatProp(self, txt, min=-100.0, max=100.0, default=33.0, update=nothing):
+    def floatProp(self, txt, min=-100.0, max=100.0, default=33.0, update=nothing, description=""):
         """
         Define a float property.
 
@@ -86,19 +90,23 @@ class Properties:
                     updated. Defaults to the nothing function defined above,
                     which does nothing.
 
+        :param str description: A description of this property.
+
         :returns: a dictionary with the specified values.
         :rtype: :class:`str`  # What is this line?
         """
+
+        description = ("A float between " + str(min) + " and " + str(max)) if description == "" else description
 
         return FloatProperty(
             name=txt,
             min=min, max=max,
             default=default,
-            description="A float between " + str(min) + " and " + str(max),
+            description=description,
             update=update
         )
 
-    def boolProp(self, txt, default=True, update=nothing):
+    def boolProp(self, txt, default=True, update=nothing, description=""):
         """
         Define a boolean property.
 
@@ -112,18 +120,22 @@ class Properties:
                     updated. Defaults to the nothing function defined above,
                     which does nothing.
 
+        :param str description: A description of this property.
+
         :returns: a dictionary with the specified values.
         :rtype: :class:`str`  # What is this line?
         """
 
+        description = ("True or false") if description == "" else description
+
         return BoolProperty(
             name=txt,
             default=default,
-            description="True or false",
+            description=description,
             update=update
         )
 
-    def strProp(self, txt, default="", subtype='NONE', update=nothing):
+    def strProp(self, txt, default="", subtype='NONE', update=nothing, description=""):
         """
         Define a string property.
 
@@ -138,19 +150,23 @@ class Properties:
                     updated. Defaults to the nothing function defined above,
                     which does nothing.
 
+        :param str description: A description of this property.
+
         :returns: a dictionary with the specified values.
         :rtype: :class:`str`  # What is this line?
         """
 
+        description = ("Text") if description == "" else description
+
         return StringProperty(
             name=txt,
             default=default,
-            description="Text",
+            description=description,
             subtype=subtype,
             update=update
         )
 
-    def enumProp(self, txt, items=[("moose", "Moose", ""), ("dog", "Dog", "")], update=nothing):
+    def enumProp(self, txt, items=[("moose", "Moose", ""), ("dog", "Dog", "")], update=nothing, description=""):
         """
         Define an enumerated property.
 
@@ -166,14 +182,18 @@ class Properties:
                     updated. Defaults to the nothing function defined above,
                     which does nothing.
 
+        :param str description: A description of this property.
+
         :returns: a dictionary with the specified values.
         :rtype: :class:`str`  # What is this line?
         """
 
+        description = ("Select Option") if description == "" else description
+
         return EnumProperty(
             name=txt,
             #default = items[0],
-            description="Select Option",
+            description=description,
             update=update,
             items=items
         )
