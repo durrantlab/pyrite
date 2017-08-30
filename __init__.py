@@ -412,11 +412,11 @@ def menu_func(self, context):
 
 class OBJECT_OT_LoadTestData(ButtonParentClass):
     """
-    Load sample data to test Pyrite's functionality.
+    Load Shroom2 sample data to test Pyrite's functionality.
     """
 
     bl_idname = "pyrite.load_test_data"
-    bl_label = "Load Test Data"
+    bl_label = "Load Shroom2 Test Data"
 
     def execute(self, context):
         """
