@@ -38,8 +38,10 @@ Rajendiran.
 Tutorial
 ========
 
+(Click here for a video tutorial.)
+
 <video width="320" height="240">
-    <source src="durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4" type="video/mp4">
+    <source src="https://durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4" type="video/mp4">
     Your browser does not support the video tag.
 </video>
 
