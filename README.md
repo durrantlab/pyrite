@@ -5,9 +5,9 @@ Pyrite
 Blender, to take advantage of Blender's advanced rendering features. A copy of
 the plugin is available at
 [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/), released under
-the terms of the GNU General Public License Version 3.
+the terms of the GNU General Public License Version 3. [Click here](https://durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4) for a video tutorial.
 
-If you use Pyrite, please cite our paper: [CITATION HERE]()
+If you use Pyrite, please cite our paper: [CITATION HERE]().
 
 Installation
 ============
@@ -37,13 +37,6 @@ Rajendiran.
 
 Tutorial
 ========
-
-(Click here for a video tutorial.)
-
-<video width="320" height="240">
-    <source src="https://durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
 
 1. Create a Protein Mesh
 ------------------------
