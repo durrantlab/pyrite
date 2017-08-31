@@ -38,6 +38,11 @@ Rajendiran.
 Tutorial
 ========
 
+<video width="320" height="240">
+    <source src="durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
 1. Create a Protein Mesh
 ------------------------
 
