@@ -52,7 +52,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.pdb_filename = context.object.pdb_filename
         self.frames = self.get_frames()
         self.guide_empties_location = None
-        self.protein_obj = bpy.context.scene.objects.active
+        self.macromolecular_obj = bpy.context.scene.objects.active
 
     def run_step(self, context, event):
         """
@@ -171,7 +171,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
     def get_pruned_indecies(self):
         """
-        Applies pruning spheres to the existing protein. Determines the
+        Applies pruning spheres to the existing macromolecule. Determines the
         indecies of the atoms to keep.
         """
 
@@ -334,9 +334,9 @@ class ProcessTrajectory(BackgroundJobParentClass):
         bpy.context.scene.frame_set(0)
         bpy.ops.pose.armature_apply()
 
-        # Parent the protein mesh to that armature
+        # Parent the mesh to that armature
         for obj in bpy.data.objects: obj.select = False
-        self.protein_obj.select = True
+        self.macromolecular_obj.select = True
         armature.select = True
         bpy.context.scene.objects.active = armature
         bpy.ops.object.parent_set(type="ARMATURE_AUTO")

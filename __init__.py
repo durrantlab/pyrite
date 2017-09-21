@@ -202,8 +202,8 @@ class Pyrite(PanelParentClass):
             # the sphere to the user.
             self.draw_high_detail_sphere_panel()
         else:
-            # It's not one of the selection spheres. Must be a protein mesh.
-            self.draw_protein_mesh_header(obj_to_use_name)
+            # It's not one of the selection spheres. Must be a mesh.
+            self.draw_mesh_header(obj_to_use_name)
 
             # Check if the location of the object is ok.
             loc = [v for v in list(obj_to_use.location)]
@@ -219,7 +219,7 @@ class Pyrite(PanelParentClass):
             else:
                 # The location, rotation, and scaling are ok, so show normal
                 # UI
-                self.draw_main_protein_mesh_panel()
+                self.draw_main_mesh_panel()
 
     def draw_loading_trajectory(self):
         """
@@ -236,7 +236,7 @@ class Pyrite(PanelParentClass):
         gives options of starting over.
         """
 
-        self.ui.label("Select protein object in 3D viewer.")
+        self.ui.label("Select macromolecular object in 3D viewer.")
 
         # Does a previous run exist? If so, provide the option to
         # start over.
@@ -299,24 +299,24 @@ class Pyrite(PanelParentClass):
         Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
         self.ui.use_box_row("Finalize")
         self.ui.ops_button(
-            rel_data_path="pyrite.back_to_protein", 
-            button_label="Back to Protein Mesh"
+            rel_data_path="pyrite.back_to_mesh", 
+            button_label="Back to Mesh"
         )
         self.ui.ops_button(
             rel_data_path="pyrite.delete_region", 
             button_label="Delete Region"
         )
 
-    def draw_protein_mesh_header(self, obj_to_use_name):
+    def draw_mesh_header(self, obj_to_use_name):
         """
-        Draw the header of the main protein-mesh panel.
+        Draw the header of the main mesh panel.
 
         :param str obj_to_use_name: The object name to display.
         """
         
         # Show the name
         self.ui.use_layout_row()
-        self.ui.label("Protein Mesh (Object Name: " + 
+        self.ui.label("Mesh (Object Name: " + 
                       obj_to_use_name  + ")")
 
         # Provide button to return to the main menu.
@@ -341,7 +341,7 @@ class Pyrite(PanelParentClass):
 
         # The selected mesh must not have location, rotation, and scale at rest.
         self.ui.use_box_row(
-            "Trajectory and protein-mesh transforms must match!"
+            "Trajectory and mesh transforms must match!"
         )
         self.ui.label("Fix before continuing...")
         if loc != [0.0, 0.0, 0.0]:
@@ -355,13 +355,13 @@ class Pyrite(PanelParentClass):
             button_label="Auto-Fix Position/Rotation/Scale"
         )
 
-    def draw_main_protein_mesh_panel(self):
+    def draw_main_mesh_panel(self):
         """
-        Draw the main protein mesh panel.
+        Draw the main mesh panel.
         """
 
         # The location, rotation, and scaling are ok, so show normal UI
-        self.ui.use_box_row("Load a Protein Trajectory")
+        self.ui.use_box_row("Load an MD Trajectory")
         self.ui.object_property(property_name="pdb_filename")
         self.ui.new_row()
 
@@ -562,7 +562,7 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             cursor_loc.y < a_max.y + margin and 
             cursor_loc.z < a_max.z + margin):
 
-            # The 3D cursor is near the protein mesh. Add sphere at cursor
+            # The 3D cursor is near the mesh. Add sphere at cursor
             # location.
             bpy.ops.mesh.primitive_uv_sphere_add(
                 segments=16, 
@@ -599,7 +599,7 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             # The 3D cursor is not near the selected mesh, so throw an error...
             Messages.send_message(
                 "SELECT_SPHERE", 
-                "Click on protein mesh to position 3D cursor!",
+                "Click on mesh to position 3D cursor!",
                 operator=self
             )
         return{'FINISHED'}
@@ -607,11 +607,11 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
 
 class OBJECT_OT_SphereDoneButton(ButtonParentClass):
     """
-    Save and return to Protein Mesh panel.
+    Save and return to Mesh panel.
     """
 
-    bl_idname = "pyrite.back_to_protein"
-    bl_label = "Back to Protein Mesh"
+    bl_idname = "pyrite.back_to_mesh"
+    bl_label = "Back to Mesh"
 
     def execute(self, context):
         """
@@ -628,24 +628,24 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         obj.sphere_z_loc = obj.location.z
         obj.sphere_scale = obj.scale.x
 
-        # Figure out what the protein mesh is.
-        protein_mesh_name = obj.name.split("__")[1]
-        protein_mesh = bpy.data.objects[protein_mesh_name]
+        # Figure out what the mesh is.
+        mesh_name = obj.name.split("__")[1]
+        mesh = bpy.data.objects[mesh_name]
 
-        # Make sure sphere pruning factor is less than whole protein pruning
-        if protein_mesh.overall_pruning_stride < obj.sphere_pruning_stride:
+        # Make sure sphere pruning factor is less than whole pruning
+        if mesh.overall_pruning_stride < obj.sphere_pruning_stride:
             # It isn't, so throw an error.
             msg = ("Coarse-graining too high (" + 
                    str(obj.sphere_pruning_stride) + "). Set <= " + 
-                   str(protein_mesh.overall_pruning_stride) + ".")
+                   str(mesh.overall_pruning_stride) + ".")
             Messages.send_message(
                 "SPHERE_STRIDE_TOO_HIGH", msg, operator=self
             )
         else:
-            # It is, so switch back to the protein mesh.
+            # It is, so switch back to the mesh.
             for obj in bpy.data.objects: obj.select = False
 
-            bpy.context.scene.objects.active = protein_mesh
+            bpy.context.scene.objects.active = mesh
             bpy.context.scene.objects.active.select = True
         
         return{'FINISHED'}
@@ -666,18 +666,18 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
         :param bpy_types.Context context: The context.
         """
 
-        # Get the associated protein mesh.
+        # Get the associated mesh.
         obj = context.object
-        protein_mesh_name = obj.name.split("__")[1]
-        protein_mesh = bpy.data.objects[protein_mesh_name]
+        mesh_name = obj.name.split("__")[1]
+        mesh = bpy.data.objects[mesh_name]
 
         # Delete the sphere.
         for o in bpy.data.objects: o.select = False
         obj.select = True
         bpy.ops.object.delete() 
 
-        # Switch back to the protein mesh.
-        bpy.context.scene.objects.active = protein_mesh
+        # Switch back to the mesh.
+        bpy.context.scene.objects.active = mesh
         bpy.context.scene.objects.active.select = True
 
         return{'FINISHED'}
@@ -959,7 +959,7 @@ class OBJECT_OT_RemoveAnimations(ButtonParentClass):
 
 class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
     """
-    Set this protein mesh's location, rotation, and scaling vectors.
+    Set this mesh's location, rotation, and scaling vectors.
     """
 
     bl_idname = "pyrite.default_locrotscale"

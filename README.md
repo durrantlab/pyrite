@@ -38,8 +38,8 @@ Rajendiran.
 Tutorial
 ========
 
-1. Create a Protein Mesh
-------------------------
+1. Create a Protein or Nucleic-Acid Mesh
+----------------------------------------
 
 Free programs such as VMD, PyMOL, and Chimera export molecular representations
 in Blender-compatible formats (e.g., OBJ, WRL, X3D, etc). Exported mesh files
@@ -89,12 +89,12 @@ After setting up the scene in your program of choice (e.g., using ribbon or
 surface representation for the proteins), export the first frame as an OBJ
 file.
 
-2. Import Protein Mesh into Blender
------------------------------------
+2. Import Mesh into Blender
+---------------------------
 
 Import your Wavefront OBJ file using Blender's menu: ```File > Import >
 Wavefront (.obj)```.  After importing the mesh, prepare it for animation. For
-example, using Blender's “Remove Doubles” command is often critical. Available
+example, using Blender's "Remove Doubles" command is often critical. Available
 in Edit Mode, this command merges duplicate vertices into one to ensure that
 all mesh faces are connected.
 
@@ -131,15 +131,15 @@ You may wish to more accurately represent the MD-captured motions of some
 regions (e.g., active sites):
 
 1. Add a sphere to Blender's viewport by positioning the 3D cursor and
-   clicking the “Create Region” button in the “High-Detail Regions” subpanel. 
+   clicking the "Create Region" button in the "High-Detail Regions" subpanel. 
 2. Adjust the position and scaling until the sphere encompasses the region of
    interest. 
 3. Use the Pyrite panel to specify how often to keep atoms within the sphere.
    By selecting a lower skip/stride value, fewer atoms within the
    sphere-defined region are discarded. The captured MD motions within this
    region will have higher spatial resolution.
-4. After positioning and scaling the sphere, press the “Back to Protein Mesh”
-   button to save. Alternatively, the “Delete Region” button will remove the
+4. After positioning and scaling the sphere, press the "Back to Mesh"
+   button to save. Alternatively, the "Delete Region" button will remove the
    current sphere. 
 
 You can add several spheres to the scene if multiple distinct regions require
@@ -148,7 +148,7 @@ higher spatial resolution.
 6. Load the Trajectory
 ----------------------
 
-After saving the high-detail regions, press the “Load Trajectory” button to
+After saving the high-detail regions, press the "Load Trajectory" button to
 import trajectory data. Empty objects populate the viewport at the locations
 of the retained atoms. 
 
