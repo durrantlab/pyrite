@@ -9,6 +9,21 @@ the terms of the GNU General Public License Version 3. [Click here](https://durr
 
 If you use Pyrite, please cite our paper: [CITATION HERE]().
 
+The Latest Version
+==================
+
+To view the source code of the latest version, visit 
+[http://git.durrantlab.com/jdurrant/pyrite](http://git.durrantlab.com/jdurrant/pyrite). 
+The same code is mirrored on GitHub.
+
+Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to:
+
+* read the documenation
+* suggest an improvement
+* point out a bug
+* ask a question about usage
+
+
 Installation
 ============
 
