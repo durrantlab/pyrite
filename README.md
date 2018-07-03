@@ -7,7 +7,7 @@ the plugin is available at
 [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/), released under
 the terms of the GNU General Public License Version 3. [Click here](https://durrantlab.com/apps/pyrite/docs/pyrite_tutorial.mp4) for a video tutorial.
 
-If you use Pyrite, please [https://onlinelibrary.wiley.com/doi/full/10.1002/jcc.25155](cite our paper).
+If you use Pyrite, please [cite our paper](https://onlinelibrary.wiley.com/doi/full/10.1002/jcc.25155).
 
 The Latest Version
 ==================
