@@ -1,5 +1,5 @@
-Pyrite 
-=======
+Pyrite 1.0.0
+============
 
 "Pyrite" is a program for importing a molecular dynamics trajectory into
 Blender, to take advantage of Blender's advanced rendering features. A copy of

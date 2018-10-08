@@ -1,5 +1,5 @@
-# Pyrite is a Blender addon for visualization molecular dynamics simulations.
-# Copyright (C) 2017  Jacob D. Durrant
+# Pyrite 1.0.0 is a Blender addon for visualization molecular dynamics
+# simulations. Copyright (C) 2017  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -615,7 +615,7 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
 
     def execute(self, context):
         """
-        Runs when button pressed.
+        Runs when button pressed (finished editing sphere).
 
         :param bpy_types.Context context: The context.
         """
@@ -628,11 +628,11 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         obj.sphere_z_loc = obj.location.z
         obj.sphere_scale = obj.scale.x
 
-        # Figure out what the mesh is.
+        # Figure out what the sphere mesh is.
         mesh_name = obj.name.split("__")[1]
         mesh = bpy.data.objects[mesh_name]
 
-        # Make sure sphere pruning factor is less than whole pruning
+        # Make sure sphere pruning factor is less than whole pruning.
         if mesh.overall_pruning_stride < obj.sphere_pruning_stride:
             # It isn't, so throw an error.
             msg = ("Coarse-graining too high (" + 
