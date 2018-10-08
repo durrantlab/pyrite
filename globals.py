@@ -1,5 +1,5 @@
-# Pyrite 1.0.0 is a Blender addon for visualization molecular dynamics
-# simulations. Copyright (C) 2017  Jacob D. Durrant
+# Pyrite 1.0.1 is a Blender addon for visualization molecular dynamics
+# simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free

@@ -1,5 +1,5 @@
-# Pyrite 1.0.0 is a Blender addon for visualization molecular dynamics
-# simulations. Copyright (C) 2017  Jacob D. Durrant
+# Pyrite 1.0.1 is a Blender addon for visualization molecular dynamics
+# simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -185,7 +185,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         # Add individual spheres
         for sphere in [
             obj for obj in bpy.data.objects 
-            if obj.name.startswith("Pyrite_highres_sphere__")
+            if obj.name.startswith("Prt_sph_pyrt_")
         ]:
             x, y, z = list(sphere.location)
             r = 5.0 * sphere.scale.x  # Because radius is 5 at creation

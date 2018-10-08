@@ -1,5 +1,5 @@
-# Pyrite 1.0.0 is a Blender addon for visualization molecular dynamics
-# simulations. Copyright (C) 2017  Jacob D. Durrant
+# Pyrite 1.0.1 is a Blender addon for visualization molecular dynamics
+# simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -32,7 +32,7 @@ from . import globals
 bl_info = {
     "name": "Pyrite",
     "author" : "Jacob Durrant <durrantj@pitt.edu>",
-    "version" : (1, 0, 0),
+    "version" : (1, 0, 1),
     "blender" : (2, 5, 7),
     "location" : "View 3D > Tools Panel",
     "description" : "Pyrite plugin",
@@ -193,11 +193,11 @@ class Pyrite(PanelParentClass):
         # What object name to use in the panel title?
         obj_to_use_name = (
             obj_to_use.name   
-            if not obj_to_use.name.startswith("Pyrite_highres_sphere__")
-            else obj_to_use.name.split("__")[1]
+            if not obj_to_use.name.startswith("Prt_sph_pyrt_")
+            else obj_to_use.name.split("_pyrt_")[1]
         )
 
-        if obj_to_use.name.startswith("Pyrite_highres_sphere__"):
+        if obj_to_use.name.startswith("Prt_sph_pyrt_"):
             # It's one of the selection spheres... Provide info/options about
             # the sphere to the user.
             self.draw_high_detail_sphere_panel()
@@ -277,7 +277,7 @@ class Pyrite(PanelParentClass):
         # Make sure they know what to cite!
         self.ui.use_box_row("Citation")
         self.ui.label("If you use Pyrite, please cite:")
-        self.ui.label("{FULL CITATION HERE}")
+        self.ui.label("Rajendiran N, Durrant JD. Pyrite: A Blender Plugin for Visualizing Molecular Dynamics Simulations Using Industry-Standard Rendering Techniques. Journal of Computational Chemistry. 39(12):748-755, 2018.")
 
     def draw_high_detail_sphere_panel(self):
         """
@@ -375,7 +375,7 @@ class Pyrite(PanelParentClass):
         # Go through and find the high-detail regions, list them.
         spheres = [
             obj for obj in bpy.data.objects 
-            if obj.name.startswith("Pyrite_highres_sphere__")
+            if obj.name.startswith("Prt_sph_pyrt_")
         ]
         for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
             button_label = ("Sphere #" + str(i + 1) + " (Keep Every " + 
@@ -578,12 +578,12 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             sphere = bpy.context.scene.objects.active
 
             # Pick sphere name, making sure not already used.
-            sphere_name = "Pyrite_highres_sphere__" + obj.name + "__" + str(0)
+            sphere_name = "Prt_sph_pyrt_" + obj.name + "_pyrt_" + str(0)
             i = 0
             while sphere_name in bpy.data.objects.keys():
                 i = i + 1
                 sphere_name = (
-                    "Pyrite_highres_sphere__" + obj.name + "__" + str(i)
+                    "Prt_sph_pyrt_" + obj.name + "_pyrt_" + str(i)
                 )
 
             sphere.name = sphere_name
@@ -629,7 +629,7 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         obj.sphere_scale = obj.scale.x
 
         # Figure out what the sphere mesh is.
-        mesh_name = obj.name.split("__")[1]
+        mesh_name = obj.name.split("_pyrt_")[1]
         mesh = bpy.data.objects[mesh_name]
 
         # Make sure sphere pruning factor is less than whole pruning.
@@ -668,7 +668,7 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
 
         # Get the associated mesh.
         obj = context.object
-        mesh_name = obj.name.split("__")[1]
+        mesh_name = obj.name.split("_pyrt_")[1]
         mesh = bpy.data.objects[mesh_name]
 
         # Delete the sphere.
@@ -702,7 +702,7 @@ class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
         # Get the sphere
         spheres = [
             obj for obj in bpy.data.objects 
-            if obj.name.startswith("Pyrite_highres_sphere__")
+            if obj.name.startswith("Prt_sph_pyrt_")
         ]
         sphere = spheres[index]
 
@@ -949,7 +949,7 @@ class OBJECT_OT_RemoveAnimations(ButtonParentClass):
         for obj in bpy.data.objects:
             if (
                 obj.name.startswith("Pyrite_") and 
-                not obj.name.startswith("Pyrite_highres_sphere__")
+                not obj.name.startswith("Prt_sph_pyrt_")
             ):
                 obj.select = True
                 bpy.ops.object.delete()

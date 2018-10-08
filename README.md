@@ -1,4 +1,4 @@
-Pyrite 1.0.0
+Pyrite 1.0.1
 ============
 
 "Pyrite" is a program for importing a molecular dynamics trajectory into
