@@ -277,8 +277,8 @@ class Pyrite(PanelParentClass):
         # Make sure they know what to cite!
         self.ui.use_box_row("Citation")
         self.ui.label("If you use Pyrite, please cite:")
-        self.ui.label("Rajendiran N, Durrant JD. Pyrite: A Blender Plugin for Visualizing Molecular Dynamics Simulations Using Industry-Standard Rendering Techniques. Journal of Computational Chemistry. 39(12):748-755, 2018.")
-
+        self.ui.label("J. Comput. Chem. 39(12):748, 2018.")
+           
     def draw_high_detail_sphere_panel(self):
         """
         The panel to display when a high-detail region is selected.
@@ -458,7 +458,7 @@ class OBJECT_OT_LoadTestData(ButtonParentClass):
         bpy.ops.pyrite.default_locrotscale()
 
         # Update filename
-        obj.pdb_filename = trajectory_samples_path + "shroom2-rock1.pdb"
+        obj.pdb_filename = trajectory_samples_path + "shroom2-rock1.traj.pdb"
 
         return {'FINISHED'}
 
