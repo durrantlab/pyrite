@@ -176,7 +176,7 @@ class Pyrite(PanelParentClass):
 
             if bpy.context.active_object == None:
                 # No active object, so they need to select one.
-                self.ui.label("Select an object for additional options.")
+                self.ui.label("Select a molecular object for additional options.")
             else:
                 # There is an active object, but still need to select one.
                 # Maybe multiple are selected. Since active object available,
@@ -499,7 +499,7 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
         if not os.path.exists(obj.pdb_filename):
             Messages.send_message(
                 "TRAJ_FILENAME_DOESNT_EXIST",
-                "Trajectory filename doesn't exist!",
+                "Trajectory isn't a multi-frame PDB file or doesn't exist!",
                 operator=self
             )
         else:
@@ -605,7 +605,7 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
             # The 3D cursor is not near the selected mesh, so throw an error...
             Messages.send_message(
                 "SELECT_SPHERE",
-                "Position the 3D cursor near the molecular mesh!",
+                "First position the 3D cursor near the molecular mesh!",
                 operator=self
             )
         return{'FINISHED'}
@@ -939,7 +939,7 @@ class OBJECT_OT_StartOver(ButtonParentClass):
         # Delete anything object that starts with the plugin's name.
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
-            if obj.name.startswith("Pyrite_"):
+            if obj.name.startswith("Pyrite_") or obj.name.startswith("Prt_sph_pyrt_"):
                 obj.select_set(state=True)
                 bpy.ops.object.delete()
 

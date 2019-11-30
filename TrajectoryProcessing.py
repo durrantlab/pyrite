@@ -67,7 +67,18 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         if self.current_step == "START":
             # On the first step, set the current frame and post a message.
-            self.current_frame = next(self.frames)
+            try:
+                self.current_frame = next(self.frames)
+            except StopIteration:
+                self.current_step = ""
+                Messages.send_message(
+                    "TRAJ_FILENAME_DOESNT_EXIST",
+                    "Trajectory isn't a multi-frame PDB file or doesn't exist!",
+                    operator=self
+                )
+                self.job_cancelled()
+                return {'CANCELLED'}
+
             Messages.send_message(
                 "LOAD_TRAJ_PROGRESS",
                 "Identifying which atoms to keep..."

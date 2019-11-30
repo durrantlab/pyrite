@@ -54,6 +54,8 @@ class MessagesClass():
             "msg_otherwise": msg_otherwise  # Not implemented...
         }
 
+        print(msg)
+
         if operator is not None:
             operator.report({"ERROR"}, msg)
 
