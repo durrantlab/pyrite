@@ -13,4 +13,9 @@
 1.0.1
 =====
 
+* Trivial updates.
+
+1.0.0
+=====
+
 * Original version.
