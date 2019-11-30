@@ -2,7 +2,7 @@
 =====
 
 * Updated Pyrite version number to 1.1.0.
-* Made minimal Blender requirement 2.81 (latest).
+* Made minimal Blender requirement 2.80.
 * Added `CHANGES.md` file.
 * Pyrite now uses the N-panel rather than the T-panel, as required for Blender
   2.80 and above.
