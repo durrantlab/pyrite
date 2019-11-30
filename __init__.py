@@ -34,7 +34,7 @@ bl_info = {
     "author": "Jacob Durrant <durrantj@pitt.edu>",
     "version": (1, 1, 0),
     "blender": (2, 80, 0),
-    "location": "View 3D > Tools Panel",
+    "location": "Sidebar > Pyrite",
     "description": "Pyrite plugin",
     "warning": "",
     "wiki_url": "",
