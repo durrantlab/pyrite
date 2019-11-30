@@ -1,5 +1,6 @@
-Pyrite 1.1.0
-============
+# Pyrite 1.1.0
+
+## Description
 
 "Pyrite" is a program for importing a molecular dynamics trajectory into
 Blender, to take advantage of Blender's advanced rendering features. A copy of
@@ -9,8 +10,7 @@ the terms of the GNU General Public License Version 3. [Click here](https://durr
 
 If you use Pyrite, please [cite our paper](https://onlinelibrary.wiley.com/doi/full/10.1002/jcc.25155).
 
-The Latest Version
-==================
+## The Latest Version
 
 To view the source code of the latest version, visit
 [http://git.durrantlab.com/jdurrant/pyrite](http://git.durrantlab.com/jdurrant/pyrite).
@@ -18,43 +18,37 @@ The same code is mirrored on GitHub.
 
 Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to:
 
-* read the documenation
+* read the documentation
 * suggest an improvement
 * point out a bug
 * ask a question about usage
 
-
-Installation
-============
+## Installation
 
 Pyrite installation within Blender is the same as with any Blender plugin:
 
 1. Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to
    download the Pyrite ZIP file.
-2. Within Blender, click on the ```File > User Preferences...``` menu item to
-   open the ```Blender User Preferences``` window.
-3. Click the ```Add-ons``` button at the top of that window to open the
+2. Within Blender, click on the ```Edit > Preferences...``` menu item to open
+   the ```Blender Preferences``` window.
+3. Click the ```Add-ons``` button at the left of that window to open the
    add-ons panel.
 4. Specify the location of the downloaded ZIP file by clicking on the
-   ```Install Add-on from File...``` button at the bottom of the window.
-5. Once installed, click the ```3D View: Pyrite``` checkbox to activate the
-   plugin.
-6. To keep the plugin active after Blender restarts, click the ```Save User
-   Settings``` button at the bottom of the window.
+   ```Install...``` button at the bottom of the window.
+5. Once installed, click the ```Import-Export: Pyrite``` checkbox to
+   activate the plugin.
+6. To keep the plugin active after Blender restarts, you may need to use
+   the ```Save Preferences``` option.
 
-
-Authors and Contacts
-====================
+## Authors and Contacts
 
 Pyrite was produced by Jacob Durrant
 ([durrantj@pitt.edu](mailto:durrantj@pitt.edu)) with the assistance of Nivi
 Rajendiran.
 
-Tutorial
-========
+## Tutorial
 
-1. Create a Protein or Nucleic-Acid Mesh
-----------------------------------------
+### 1. Create a Protein or Nucleic-Acid Mesh
 
 Free programs such as VMD, PyMOL, and Chimera export molecular representations
 in Blender-compatible formats (e.g., OBJ, WRL, X3D, etc). Exported mesh files
@@ -63,7 +57,7 @@ model. Before exporting, all transformation matrices must be set to identity.
 In VMD, this simple TCL script, adapted from code provided by John Stone
 (VMD’s primary developer), sets the coordinate system:
 
-```
+```tcl
 set m {
   {{1.0 0.0 0.0 0.0}
    {0.0 1.0 0.0 0.0}
@@ -91,7 +85,7 @@ for {set i 0} {$i < [molinfo num]} {incr i} {
 In PyMOL, the same can be accomplished with this Python script, which moves
 and rotates the camera to the appropriate location:
 
-```
+```python
 cmd.set_view([ 1.0,   0.0,   0.0,
                0.0,   1.0,   0.0,
                0.0,   0.0,   1.0,
@@ -104,8 +98,7 @@ After setting up the scene in your program of choice (e.g., using ribbon or
 surface representation for the proteins), export the first frame as an OBJ
 file.
 
-2. Import Mesh into Blender
----------------------------
+### 2. Import Mesh into Blender
 
 Import your Wavefront OBJ file using Blender's menu: ```File > Import >
 Wavefront (.obj)```.  After importing the mesh, prepare it for animation. For
@@ -117,11 +110,10 @@ Blender itself sometimes imports meshes using the incorrect coordinate system.
 Setting the object position and rotation vectors to ```(0.0, 0.0, 0.0)```, and
 the scaling vector to ```(1.0, 1.0, 1.0)```, ensures that the imported object
 and trajectory use the same system. Pressing the "Auto-Fix" button in Pyrite's
-Tool Shelf Panel will automatically set these vectors. You can also set the
+Sidebar Panel will automatically set these vectors. You can also set the
 values in Blender’s Object Properties Panel.
 
-3. Specify the Trajectory File
-------------------------------
+### 3. Specify the Trajectory File
 
 If an object has the appropriate transformation vectors, the Pyrite tab
 presents options for simulation import. Use the first option to specify the
@@ -130,8 +122,7 @@ saved in other formats (e.g., the binary DCD format) can be converted to PDB
 using [VMD](http://www.ks.uiuc.edu/Research/vmd/) or
 [catdcd](http://www.ks.uiuc.edu/Development/MDTools/catdcd/).
 
-4. Set the Trajectory-Simplification Options
---------------------------------------------
+### 4. Set the Trajectory-Simplification Options
 
 Loading the position of every atom across the entire MD trajectory is often
 too memory and CPU intensive. Instead, Pyrite coarse grains the simulation
@@ -139,8 +130,7 @@ across time and space by discarding some frames and atoms. Select the temporal
 and spatial resolution by indicating how often to keep a frame or atom (e.g.,
 only every nth frame and every mth atom).
 
-5. Create High-Detail Regions
------------------------------
+### 5. Create High-Detail Regions
 
 You may wish to more accurately represent the MD-captured motions of some
 regions (e.g., active sites):
@@ -160,8 +150,7 @@ regions (e.g., active sites):
 You can add several spheres to the scene if multiple distinct regions require
 higher spatial resolution.
 
-6. Load the Trajectory
-----------------------
+### 6. Load the Trajectory
 
 After saving the high-detail regions, press the "Load Trajectory" button to
 import trajectory data. Empty objects populate the viewport at the locations
