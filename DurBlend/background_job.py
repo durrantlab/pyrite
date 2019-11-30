@@ -17,6 +17,7 @@
 import bpy
 import time
 
+
 class BackgroundJobParentClass(bpy.types.Operator):
     """
     A class for running jobs in the background.
@@ -41,7 +42,7 @@ class BackgroundJobParentClass(bpy.types.Operator):
         if event.type in {'ESC'}:
             self.job_cancelled()
             return {'CANCELLED'}
-        
+
         # First time, setup stuff.
         if self.first_run == True:
             self.first_run = False
@@ -65,7 +66,8 @@ class BackgroundJobParentClass(bpy.types.Operator):
         """
 
         if context.object:
-            self.timer = context.window_manager.event_timer_add(0.01, context.window)
+            self.timer = context.window_manager.event_timer_add(
+                0.01, window=context.window)
             context.window_manager.modal_handler_add(self)
             return {'RUNNING_MODAL'}
         else:
@@ -87,7 +89,7 @@ class BackgroundJobParentClass(bpy.types.Operator):
 
         :param bpy.types.Event event: The event.
         """
-        
+
         pass
 
     def run_step(self, context, event):
@@ -96,10 +98,9 @@ class BackgroundJobParentClass(bpy.types.Operator):
         you can periodically return control to the UI, making it seem like a
         background job. Overwritten by children.
 
-        :param bpy_types.Context context: The context. 
+        :param bpy_types.Context context: The context.
 
         :param bpy.types.Event event: The event.
         """
 
         pass
-

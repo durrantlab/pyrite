@@ -1,4 +1,4 @@
-# Pyrite 1.0.1 is a Blender addon for visualization molecular dynamics
+# Pyrite 1.1.0 is a Blender addon for visualization molecular dynamics
 # simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
     """
     A class to load and process a molecular dynamics trajectory.
     """
-    
+
     bl_idname = "pyrite.process_trajectory"
 
     def setup(self, context, event):
@@ -40,7 +40,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         :param bpy.types.Event event: The event.
         """
-        
+
         self.overall_pruning_stride = context.object.overall_pruning_stride
         self.current_step = "START"
         self.current_frame = None
@@ -52,7 +52,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
         self.pdb_filename = context.object.pdb_filename
         self.frames = self.get_frames()
         self.guide_empties_location = None
-        self.macromolecular_obj = bpy.context.scene.objects.active
+        self.macromolecular_obj = bpy.context.active_object
 
     def run_step(self, context, event):
         """
@@ -60,16 +60,16 @@ class ProcessTrajectory(BackgroundJobParentClass):
         you can periodically return control to the UI, making it seem like a
         background job.
 
-        :param bpy_types.Context context: The context. 
+        :param bpy_types.Context context: The context.
 
         :param bpy.types.Event event: The event.
         """
-        
+
         if self.current_step == "START":
             # On the first step, set the current frame and post a message.
             self.current_frame = next(self.frames)
             Messages.send_message(
-                "LOAD_TRAJ_PROGRESS", 
+                "LOAD_TRAJ_PROGRESS",
                 "Identifying which atoms to keep..."
             )
             self.current_step = "ID_ATOMS"
@@ -84,7 +84,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
             try:
                 self.current_frame = next(self.frames)
                 Messages.send_message(
-                    "LOAD_TRAJ_PROGRESS", 
+                    "LOAD_TRAJ_PROGRESS",
                     "Loading frame " + str(self.frame_index + 1) + "..."
                 )
                 self.current_step = "POSITION_EMPTIES"
@@ -94,7 +94,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
                 # step.
                 self.position_empties_at_atom_locs(position_all=True)
                 Messages.send_message(
-                    "LOAD_TRAJ_PROGRESS", 
+                    "LOAD_TRAJ_PROGRESS",
                     "Setting up armature and bones..."
                 )
                 self.current_step = "ARMATURE"
@@ -108,7 +108,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
             # Everything loaded. Now set up armature and bones.
             self.armature_and_bones()
             return {'CANCELLED'}
-    
+
     def job_cancelled(self):
         """
         The user cancels the job.
@@ -137,7 +137,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
                     StringIO("".join(current_pdb_frame_lines)),
                     False, False, False, False
                 )
-                yield mol   
+                yield mol
 
                 # Start over with next frame
                 current_pdb_frame_lines = []
@@ -157,12 +157,12 @@ class ProcessTrajectory(BackgroundJobParentClass):
         guide_empties = bpy.context.object
         guide_empties.name = "Pyrite_GuideEmpties"
         self.guide_empties_location = numpy.mean(
-            self.current_frame.get_coordinates(), 
+            self.current_frame.get_coordinates(),
             axis=0
         )
         guide_empties.location = self.guide_empties_location
-        
-        # Add enough empties to match the number of bones. 
+
+        # Add enough empties to match the number of bones.
         for index in self.selection_atoms_to_keep:
             empty = bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1)
             empty = bpy.context.object
@@ -184,7 +184,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         # Add individual spheres
         for sphere in [
-            obj for obj in bpy.data.objects 
+            obj for obj in bpy.data.objects
             if obj.name.startswith("Prt_sph_pyrt_")
         ]:
             x, y, z = list(sphere.location)
@@ -194,7 +194,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
 
         # Make a kd tree if needed
         coors = self.current_frame.get_coordinates()  # So kdtree calculated on
-                                                      # coordinates of first 
+                                                      # coordinates of first
                                                       # frame only.
         # Create kd-tree containing atom/bone coordinates
         kdtree = mathutils.kdtree.KDTree(len(coors))
@@ -226,10 +226,10 @@ class ProcessTrajectory(BackgroundJobParentClass):
             indices_in_this_sphere = set([])
             for coor in coors_in_sphere:
                 indices_in_this_sphere.add(int(coor[1]))
-            
+
             # Remove from the ones in this sphere ones that were in previous
             # spheres
-            indices_to_keep = (indices_in_this_sphere - 
+            indices_to_keep = (indices_in_this_sphere -
                                indices_in_previous_spheres)
 
             # Update indices_in_previous_spheres
@@ -265,7 +265,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
                        Use True at first and last frame. Defaults to False.
         """
 
-        try:  
+        try:
             # So dumb that blender throws an error if it's already in object
             # mode...
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -283,7 +283,7 @@ class ProcessTrajectory(BackgroundJobParentClass):
             sel = self.selection_atoms_to_keep_with_offset[
                 self.frame_index % self.frame_stride
             ]
-        
+
         # Get the coordinates of the appropriate atoms.
         coors = self.current_frame.get_coordinates()[sel]
 
@@ -335,17 +335,17 @@ class ProcessTrajectory(BackgroundJobParentClass):
         bpy.ops.pose.armature_apply()
 
         # Parent the mesh to that armature
-        for obj in bpy.data.objects: obj.select = False
-        self.macromolecular_obj.select = True
-        armature.select = True
-        bpy.context.scene.objects.active = armature
+        for obj in bpy.data.objects: obj.select_set(state=False)
+        self.macromolecular_obj.select_set(state=True)
+        armature.select_set(state=True)
+        bpy.context.view_layer.objects.active = armature
         bpy.ops.object.parent_set(type="ARMATURE_AUTO")
 
         # Zoom in on armature
         try: bpy.ops.object.mode_set(mode='OBJECT')
         except: pass
-        
-        bpy.context.scene.objects.active = bpy.data.objects['Pyrite_Armature']
+
+        bpy.context.view_layer.objects.active = bpy.data.objects['Pyrite_Armature']
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
         # No longer running

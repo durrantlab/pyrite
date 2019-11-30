@@ -1,4 +1,4 @@
-# DurBlend is a library for easily creating blender plugins. 
+# DurBlend is a library for easily creating blender plugins.
 # Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -18,6 +18,8 @@ import textwrap
 import bpy
 
 ##### Class for drawing UI elements #####
+
+
 class UI:
     """
     This class contains functions to make it easier to layout the user
@@ -46,7 +48,7 @@ class UI:
 
         box = self.parent.layout.box()
         if label_txt != "":
-            box.label(label_txt)
+            box.label(text=label_txt)
         self.row_context = box
 
     def new_row(self):

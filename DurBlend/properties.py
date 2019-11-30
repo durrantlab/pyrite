@@ -1,4 +1,4 @@
-# DurBlend is a library for easily creating blender plugins. 
+# DurBlend is a library for easily creating blender plugins.
 # Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -16,6 +16,7 @@
 
 from bpy.props import *
 
+
 def nothing(self, context):
     """
     This is a function that does nothing.
@@ -23,6 +24,8 @@ def nothing(self, context):
     return
 
 ##### Setup scene and object variables #####
+
+
 class Properties:
     """
     This class contains functions that easily define the properties controlled
@@ -59,7 +62,8 @@ class Properties:
         :rtype: :class:`str`  # What is this line?
         """
 
-        description = ("An integer between " + str(min) + " and " + str(max)) if description == "" else description
+        description = ("An integer between " + str(min) + " and " +
+                       str(max)) if description == "" else description
 
         return IntProperty(
             name=txt,
@@ -96,7 +100,8 @@ class Properties:
         :rtype: :class:`str`  # What is this line?
         """
 
-        description = ("A float between " + str(min) + " and " + str(max)) if description == "" else description
+        description = ("A float between " + str(min) + " and " +
+                       str(max)) if description == "" else description
 
         return FloatProperty(
             name=txt,
@@ -197,4 +202,3 @@ class Properties:
             update=update,
             items=items
         )
-

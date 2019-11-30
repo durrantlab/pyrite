@@ -1,4 +1,4 @@
-Pyrite 1.0.1
+Pyrite 1.1.0
 ============
 
 "Pyrite" is a program for importing a molecular dynamics trajectory into
@@ -12,8 +12,8 @@ If you use Pyrite, please [cite our paper](https://onlinelibrary.wiley.com/doi/f
 The Latest Version
 ==================
 
-To view the source code of the latest version, visit 
-[http://git.durrantlab.com/jdurrant/pyrite](http://git.durrantlab.com/jdurrant/pyrite). 
+To view the source code of the latest version, visit
+[http://git.durrantlab.com/jdurrant/pyrite](http://git.durrantlab.com/jdurrant/pyrite).
 The same code is mirrored on GitHub.
 
 Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to:
@@ -30,15 +30,15 @@ Installation
 Pyrite installation within Blender is the same as with any Blender plugin:
 
 1. Visit [http://durrantlab.com/pyrite/](http://durrantlab.com/pyrite/) to
-   download the Pyrite ZIP file. 
+   download the Pyrite ZIP file.
 2. Within Blender, click on the ```File > User Preferences...``` menu item to
-   open the ```Blender User Preferences``` window. 
+   open the ```Blender User Preferences``` window.
 3. Click the ```Add-ons``` button at the top of that window to open the
-   add-ons panel. 
+   add-ons panel.
 4. Specify the location of the downloaded ZIP file by clicking on the
-   ```Install Add-on from File...``` button at the bottom of the window. 
+   ```Install Add-on from File...``` button at the bottom of the window.
 5. Once installed, click the ```3D View: Pyrite``` checkbox to activate the
-   plugin. 
+   plugin.
 6. To keep the plugin active after Blender restarts, click the ```Save User
    Settings``` button at the bottom of the window.
 
@@ -61,7 +61,7 @@ in Blender-compatible formats (e.g., OBJ, WRL, X3D, etc). Exported mesh files
 use camera coordinates rather than the world coordinates of the original
 model. Before exporting, all transformation matrices must be set to identity.
 In VMD, this simple TCL script, adapted from code provided by John Stone
-(VMD’s primary developer), sets the coordinate system: 
+(VMD’s primary developer), sets the coordinate system:
 
 ```
 set m {
@@ -128,7 +128,7 @@ presents options for simulation import. Use the first option to specify the
 location of the MD trajectory file, in multi-frame PDB format. Trajectories
 saved in other formats (e.g., the binary DCD format) can be converted to PDB
 using [VMD](http://www.ks.uiuc.edu/Research/vmd/) or
-[catdcd](http://www.ks.uiuc.edu/Development/MDTools/catdcd/). 
+[catdcd](http://www.ks.uiuc.edu/Development/MDTools/catdcd/).
 
 4. Set the Trajectory-Simplification Options
 --------------------------------------------
@@ -137,7 +137,7 @@ Loading the position of every atom across the entire MD trajectory is often
 too memory and CPU intensive. Instead, Pyrite coarse grains the simulation
 across time and space by discarding some frames and atoms. Select the temporal
 and spatial resolution by indicating how often to keep a frame or atom (e.g.,
-only every nth frame and every mth atom). 
+only every nth frame and every mth atom).
 
 5. Create High-Detail Regions
 -----------------------------
@@ -146,16 +146,16 @@ You may wish to more accurately represent the MD-captured motions of some
 regions (e.g., active sites):
 
 1. Add a sphere to Blender's viewport by positioning the 3D cursor and
-   clicking the "Create Region" button in the "High-Detail Regions" subpanel. 
+   clicking the "Create Region" button in the "High-Detail Regions" subpanel.
 2. Adjust the position and scaling until the sphere encompasses the region of
-   interest. 
+   interest.
 3. Use the Pyrite panel to specify how often to keep atoms within the sphere.
    By selecting a lower skip/stride value, fewer atoms within the
    sphere-defined region are discarded. The captured MD motions within this
    region will have higher spatial resolution.
 4. After positioning and scaling the sphere, press the "Back to Mesh"
    button to save. Alternatively, the "Delete Region" button will remove the
-   current sphere. 
+   current sphere.
 
 You can add several spheres to the scene if multiple distinct regions require
 higher spatial resolution.
@@ -165,5 +165,4 @@ higher spatial resolution.
 
 After saving the high-detail regions, press the "Load Trajectory" button to
 import trajectory data. Empty objects populate the viewport at the locations
-of the retained atoms. 
-
+of the retained atoms.

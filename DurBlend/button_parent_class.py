@@ -16,6 +16,7 @@
 
 import bpy
 
+
 class ButtonParentClass(bpy.types.Operator):
     """
     The parent class doesn't do anything for now. But in the future I might

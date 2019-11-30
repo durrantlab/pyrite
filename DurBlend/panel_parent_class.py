@@ -1,4 +1,4 @@
-# DurBlend is a library for easily creating blender plugins. 
+# DurBlend is a library for easily creating blender plugins.
 # Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -17,6 +17,7 @@
 import bpy
 from .properties import Properties
 from .ui import UI
+
 
 class PanelParentClass(bpy.types.Panel):
     """
@@ -39,7 +40,7 @@ class PanelParentClass(bpy.types.Panel):
     ui = UI()
 
     @classmethod
-    def start(self):
+    def start(cls):
         """
         This function is called when your panel is created. Every panel must
         have one. In this case, it just calls setup_properties(), which you
@@ -51,10 +52,10 @@ class PanelParentClass(bpy.types.Panel):
         you define all the properties for your panel (see example below).
         """
 
-        self.setup_properties()
+        cls.setup_properties()
 
     @classmethod
-    def setup_properties(self):
+    def setup_properties(cls):
         """
         This function should be overwritten in your child class. It's a place
         where you define all the properties for your panel (see example

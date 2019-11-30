@@ -1,4 +1,4 @@
-# DurBlend is a library for easily creating blender plugins. 
+# DurBlend is a library for easily creating blender plugins.
 # Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it

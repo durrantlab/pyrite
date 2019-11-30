@@ -26,14 +26,14 @@ else:
 # Get the first frame as PDB. Save it.
 A = u.select_atoms("protein and name CA")
 with Writer("__first_frame.tmp.pdb", A.n_atoms) as W:
-    u.trajectory[0] # rewind trajectory
+    u.trajectory[0]  # rewind trajectory
     W.write(A)
 
 # Load it back in as the reference for a subsequent alignment.
 ref = Universe("__first_frame.tmp.pdb")
 
 # Align the trajectory to the reference (first) frame.
-u.trajectory[0] # rewind trajectory
+u.trajectory[0]  # rewind trajectory
 ref.trajectory[0]
 alignment = align.AlignTraj(u, ref, select="protein and name CA",
                             weights='mass', in_memory=True)
@@ -41,7 +41,7 @@ alignment.run()
 
 # Ignore atoms that belong to water molecules or counter ions. Retain only the
 # hydrogen atoms on any ligands (not protein).
-water_resnames = ["HOH", "WAT", "H2O", "TIP" ,"TIP3" ,"TP3", "TP4", "TIP3P"]
+water_resnames = ["HOH", "WAT", "H2O", "TIP", "TIP3", "TP3", "TP4", "TIP3P"]
 common_counter_ion_resnames = ["SOD", "POT", "CLA", "K+", "Na+", "Cl-"]
 water_and_ions_resnames = water_resnames + common_counter_ion_resnames
 water_and_ions_selection = 'resname ' + " ".join(water_and_ions_resnames)

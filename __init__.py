@@ -1,4 +1,4 @@
-# Pyrite 1.0.1 is a Blender addon for visualization molecular dynamics
+# Pyrite 1.1.0 is a Blender addon for visualization molecular dynamics
 # simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -31,53 +31,54 @@ from . import globals
 
 bl_info = {
     "name": "Pyrite",
-    "author" : "Jacob Durrant <durrantj@pitt.edu>",
-    "version" : (1, 0, 1),
-    "blender" : (2, 5, 7),
-    "location" : "View 3D > Tools Panel",
-    "description" : "Pyrite plugin",
-    "warning" : "",
-    "wiki_url" : "",
-    "tracker_url" : "",
+    "author": "Jacob Durrant <durrantj@pitt.edu>",
+    "version": (1, 1, 0),
+    "blender": (2, 81, 0),
+    "location": "View 3D > Tools Panel",
+    "description": "Pyrite plugin",
+    "warning": "",
+    "wiki_url": "",
+    "tracker_url": "",
     "category": "3D View",
 }
 
 ###### Below specific to this plugin ######
 
+
 class Pyrite(PanelParentClass):
     """Pyrite"""
     bl_label = "Pyrite"
-    bl_idname = "object.pyrite"
+    bl_idname = "PYRITE_PT_mainPanel"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_category = "Pyrite"
 
     @classmethod
-    def setup_properties(self):
+    def setup_properties(cls):
         """
         Define all the scene and object properties for your panel. Every Panel
         class must have this function!
         """
 
         # Set up the object properties.
-        bpy.types.Object.pdb_filename = self.prop_funcs.strProp(
-            "PDB file", "sample.pdb", 'FILE_PATH', 
+        bpy.types.Object.pdb_filename = cls.prop_funcs.strProp(
+            "PDB file", "sample.pdb", 'FILE_PATH',
             description="The full path to the multi-frame, PDB-formatted trajectory file you wish to import."
         )
-        bpy.types.Object.frame_stride = self.prop_funcs.intProp(
-            "Keep every nth frame", 1, 100, 2, 
+        bpy.types.Object.frame_stride = cls.prop_funcs.intProp(
+            "Keep every nth frame", 1, 100, 2,
             description="To save memory, Pyrite will drop some trajectory frames. How often would you like to retain a frame?"
         )
-        bpy.types.Object.overall_pruning_stride = self.prop_funcs.intProp(
+        bpy.types.Object.overall_pruning_stride = cls.prop_funcs.intProp(
             "Keep every nth atom", 1, 100, 5, description="To save memory, Pyrite will only consider some atoms. How often would you like to retain an atom?"
         )
 
         # Set up the high-detail sphere properties.
-        bpy.types.Object.sphere_pruning_stride = self.prop_funcs.intProp(
-            "Keep every nth atom", 1, 100, 2, 
+        bpy.types.Object.sphere_pruning_stride = cls.prop_funcs.intProp(
+            "Keep every nth atom", 1, 100, 2,
             description="Within a high-detail region, you can skip fewer atoms. How often would you like to retain an atom?"
         )
-        
+
         def update_func_sphere_x(self, context):
             """
             Update function for sphere change (x-coordinate).
@@ -108,19 +109,19 @@ class Pyrite(PanelParentClass):
             obj.scale.y = obj.sphere_scale
             obj.scale.z = obj.sphere_scale
 
-        bpy.types.Object.sphere_x_loc = self.prop_funcs.floatProp(
+        bpy.types.Object.sphere_x_loc = cls.prop_funcs.floatProp(
             "X", -10000, 10000, -9999.99, update=update_func_sphere_x,
             description="Change the x coordinate of the high-detail region."
         )
-        bpy.types.Object.sphere_y_loc = self.prop_funcs.floatProp(
+        bpy.types.Object.sphere_y_loc = cls.prop_funcs.floatProp(
             "Y", -10000, 10000, -9999.99, update=update_func_sphere_y,
             description="Change the y coordinate of the high-detail region."
         )
-        bpy.types.Object.sphere_z_loc = self.prop_funcs.floatProp(
+        bpy.types.Object.sphere_z_loc = cls.prop_funcs.floatProp(
             "Z", -10000, 10000, -9999.99, update=update_func_sphere_z,
             description="Change the z coordinate of the high-detail region."
         )
-        bpy.types.Object.sphere_scale = self.prop_funcs.floatProp(
+        bpy.types.Object.sphere_scale = cls.prop_funcs.floatProp(
             "Scale", 0, 100, 1, update=update_func_sphere_scale,
             description="Change the scale of the high-detail region."
         )
@@ -138,14 +139,14 @@ class Pyrite(PanelParentClass):
         """
 
         # global currently_loading_traj
-        
+
         self.set_class_variables(context)
 
         # Pick the object. Use active object if self.obj is None.
         obj_to_use = self.obj
         if obj_to_use is None:
-            obj_to_use = bpy.context.scene.objects.active
-        
+            obj_to_use = bpy.context.active_object
+
         # Consider the possibility that a trajectory is current being
         # loaded... If so, panel should only indicate progress.
         if globals.currently_loading_traj:
@@ -163,8 +164,8 @@ class Pyrite(PanelParentClass):
             # What is more than one thing is selected? That doesn't work
             # either...
             currently_selected = [
-                obj for obj in bpy.data.objects 
-                if obj.select == True
+                obj for obj in bpy.data.objects
+                if obj.select_get() == True
             ]
             if len(currently_selected) != 1:
                 mesh_not_selected = True
@@ -172,8 +173,8 @@ class Pyrite(PanelParentClass):
         if mesh_not_selected == True:
             # So no mesh is selected. Provide instructions re. how to proceed.
             self.ui.use_box_row("Instructions")
-            
-            if bpy.context.scene.objects.active == None:
+
+            if bpy.context.active_object == None:
                 # No active object, so they need to select one.
                 self.ui.label("Select an object for additional options.")
             else:
@@ -184,7 +185,7 @@ class Pyrite(PanelParentClass):
 
             # A button for loading test data.
             self.show_test_data_button()
-            
+
             # Show them what to cite.
             self.draw_citation()
 
@@ -192,7 +193,7 @@ class Pyrite(PanelParentClass):
 
         # What object name to use in the panel title?
         obj_to_use_name = (
-            obj_to_use.name   
+            obj_to_use.name
             if not obj_to_use.name.startswith("Prt_sph_pyrt_")
             else obj_to_use.name.split("_pyrt_")[1]
         )
@@ -209,10 +210,10 @@ class Pyrite(PanelParentClass):
             loc = [v for v in list(obj_to_use.location)]
             rot = [v for v in list(obj_to_use.rotation_euler)]
             scale = [v for v in list(obj_to_use.scale)]
-            if (loc != [0.0, 0.0, 0.0] or 
-                rot != [0.0, 0.0, 0.0] or 
-                scale != [1.0, 1.0, 1.0]
-            ):
+            if (loc != [0.0, 0.0, 0.0] or
+                    rot != [0.0, 0.0, 0.0] or
+                    scale != [1.0, 1.0, 1.0]
+                    ):
                 # The selected mesh must not have location, rotation, and
                 # scale at rest.
                 self.draw_object_coordinates_not_set_error(loc, rot, scale)
@@ -249,11 +250,11 @@ class Pyrite(PanelParentClass):
         if previous_run_exists:
             self.ui.use_box_row("Previous Runs")
             self.ui.ops_button(
-                rel_data_path="pyrite.remove_animations", 
+                rel_data_path="pyrite.remove_animations",
                 button_label="Remove Animations"
             )
             self.ui.ops_button(
-                rel_data_path="pyrite.start_over", 
+                rel_data_path="pyrite.start_over",
                 button_label="Start Over"
             )
 
@@ -265,7 +266,7 @@ class Pyrite(PanelParentClass):
         self.ui.use_layout_row()
 
         self.ui.ops_button(
-            rel_data_path="pyrite.load_test_data", 
+            rel_data_path="pyrite.load_test_data",
             button_label="Load Test Data"
         )
 
@@ -278,7 +279,7 @@ class Pyrite(PanelParentClass):
         self.ui.use_box_row("Citation")
         self.ui.label("If you use Pyrite, please cite:")
         self.ui.label("J. Comput. Chem. 39(12):748, 2018.")
-           
+
     def draw_high_detail_sphere_panel(self):
         """
         The panel to display when a high-detail region is selected.
@@ -299,11 +300,11 @@ class Pyrite(PanelParentClass):
         Messages.display_message("SPHERE_STRIDE_TOO_HIGH", self)
         self.ui.use_box_row("Finalize")
         self.ui.ops_button(
-            rel_data_path="pyrite.back_to_mesh", 
+            rel_data_path="pyrite.back_to_mesh",
             button_label="Back to Mesh"
         )
         self.ui.ops_button(
-            rel_data_path="pyrite.delete_region", 
+            rel_data_path="pyrite.delete_region",
             button_label="Delete Region"
         )
 
@@ -313,15 +314,15 @@ class Pyrite(PanelParentClass):
 
         :param str obj_to_use_name: The object name to display.
         """
-        
+
         # Show the name
         self.ui.use_layout_row()
-        self.ui.label("Mesh (Object Name: " + 
-                      obj_to_use_name  + ")")
+        self.ui.label("Mesh (Object Name: " +
+                      obj_to_use_name + ")")
 
         # Provide button to return to the main menu.
         self.ui.ops_button(
-            rel_data_path="pyrite.main_menu", 
+            rel_data_path="pyrite.main_menu",
             button_label="Return to Main Menu"
         )
 
@@ -351,7 +352,7 @@ class Pyrite(PanelParentClass):
         if scale != [1.0, 1.0, 1.0]:
             self.ui.label("Mesh scaling is not [1.0, 1.0, 1.0]")
         self.ui.ops_button(
-            rel_data_path="pyrite.default_locrotscale", 
+            rel_data_path="pyrite.default_locrotscale",
             button_label="Auto-Fix Position/Rotation/Scale"
         )
 
@@ -374,19 +375,19 @@ class Pyrite(PanelParentClass):
 
         # Go through and find the high-detail regions, list them.
         spheres = [
-            obj for obj in bpy.data.objects 
+            obj for obj in bpy.data.objects
             if obj.name.startswith("Prt_sph_pyrt_")
         ]
         for i, obj in enumerate(spheres[:10]):  # At most 10 displayed
-            button_label = ("Sphere #" + str(i + 1) + " (Keep Every " + 
+            button_label = ("Sphere #" + str(i + 1) + " (Keep Every " +
                             str(obj.sphere_pruning_stride) + " Atoms)")
             self.ui.ops_button(
-                rel_data_path="pyrite.select_sphere" + str(i), 
+                rel_data_path="pyrite.select_sphere" + str(i),
                 button_label=button_label)
 
         Messages.display_message("SELECT_SPHERE", self)
         self.ui.ops_button(
-            rel_data_path="pyrite.add_sphere", 
+            rel_data_path="pyrite.add_sphere",
             button_label="Create Region"
         )
 
@@ -399,6 +400,7 @@ class Pyrite(PanelParentClass):
         )
 
         self.ui.new_row()
+
 
 def menu_func(self, context):
     """
@@ -429,30 +431,31 @@ class OBJECT_OT_LoadTestData(ButtonParentClass):
 
         # Get the trajectoy_samples directory
         trajectory_samples_path = (
-            os.path.dirname(os.path.realpath(__file__)) + os.sep + 
+            os.path.dirname(os.path.realpath(__file__)) + os.sep +
             "trajectory_samples" + os.sep
         )
-        
+
         # Save current object names
         current_obj_names = set(
             [n for n in bpy.context.scene.objects.keys()]
         )
 
         # Load in the obj mesh
-        bpy.ops.import_scene.obj(filepath=trajectory_samples_path + 
+        bpy.ops.import_scene.obj(filepath=trajectory_samples_path +
                                  "shroom2-rock1-surf.obj")
-        
+
         # Get new mesh
         new_obj_names = set(
             [n for n in bpy.context.scene.objects.keys()]
         )
         new_obj_name = list(new_obj_names - current_obj_names)[0]
         obj = bpy.context.scene.objects[new_obj_name]
-        
+
         # Select it
-        for o in bpy.data.objects: o.select = False
-        obj.select = True
-        bpy.context.scene.objects.active = obj
+        for o in bpy.data.objects:
+            o.select_set(state=False)
+        obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = obj
 
         # Position it appropriately.
         bpy.ops.pyrite.default_locrotscale()
@@ -461,6 +464,7 @@ class OBJECT_OT_LoadTestData(ButtonParentClass):
         obj.pdb_filename = trajectory_samples_path + "shroom2-rock1.traj.pdb"
 
         return {'FINISHED'}
+
 
 class OBJECT_OT_LoadTrajButton(ButtonParentClass):
     """
@@ -494,7 +498,7 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
         # Check to make sure filename exists
         if not os.path.exists(obj.pdb_filename):
             Messages.send_message(
-                "TRAJ_FILENAME_DOESNT_EXIST", 
+                "TRAJ_FILENAME_DOESNT_EXIST",
                 "Trajectory filename doesn't exist!",
                 operator=self
             )
@@ -507,6 +511,7 @@ class OBJECT_OT_LoadTrajButton(ButtonParentClass):
 
         return {'FINISHED'}
 
+
 def geometric_center(obj):
     """
     Calculate the geometric center of an object.
@@ -516,13 +521,13 @@ def geometric_center(obj):
     :returns: a vector, the geometric center
     :rtype: :class:`Vector`
     """
-    
+
     # See https://blender.stackexchange.com/questions/62040/get-center-of-geometry-of-an-object
     local_bbox_center = (
         0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
     )
-    
-    global_bbox_center = obj.matrix_world * local_bbox_center
+
+    global_bbox_center = obj.matrix_world @ local_bbox_center
     return global_bbox_center
 
 
@@ -543,39 +548,40 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
 
         obj = context.object
 
-        # So dumb that blender throws an error if it's already in object
-        # mode...
-        try: bpy.ops.object.mode_set(mode='OBJECT')
-        except: pass
+        # Blender throws an error if it's already in object mode...
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
 
         # Is the cursor near the mesh?
-        cursor_loc = bpy.context.scene.cursor_location
+        cursor_loc = context.scene.cursor.location
         margin = 5.0
         global_bbox_center = geometric_center(obj)
         a_min = global_bbox_center - 0.5 * obj.dimensions
         a_max = global_bbox_center + 0.5 * obj.dimensions
 
-        if (cursor_loc.x > a_min.x - margin and 
-            cursor_loc.y > a_min.y - margin and 
-            cursor_loc.z > a_min.z - margin and 
-            cursor_loc.x < a_max.x + margin and 
-            cursor_loc.y < a_max.y + margin and 
-            cursor_loc.z < a_max.z + margin):
+        if (cursor_loc.x > a_min.x - margin and
+            cursor_loc.y > a_min.y - margin and
+            cursor_loc.z > a_min.z - margin and
+            cursor_loc.x < a_max.x + margin and
+            cursor_loc.y < a_max.y + margin and
+                cursor_loc.z < a_max.z + margin):
 
             # The 3D cursor is near the mesh. Add sphere at cursor
             # location.
             bpy.ops.mesh.primitive_uv_sphere_add(
-                segments=16, 
-                ring_count=16, 
-                size=5.0, # Radius
-                view_align=False, 
-                enter_editmode=False, 
-                location=cursor_loc, 
+                segments=16,
+                ring_count=16,
+                radius=5.0,
+                align="VIEW",
+                enter_editmode=False,
+                location=cursor_loc,
                 rotation=(0.0, 0.0, 0.0)
             )
-            
+
             # Store the new sphere in a variable.
-            sphere = bpy.context.scene.objects.active
+            sphere = bpy.context.active_object
 
             # Pick sphere name, making sure not already used.
             sphere_name = "Prt_sph_pyrt_" + obj.name + "_pyrt_" + str(0)
@@ -598,8 +604,8 @@ class OBJECT_OT_AddSphereButton(ButtonParentClass):
         else:
             # The 3D cursor is not near the selected mesh, so throw an error...
             Messages.send_message(
-                "SELECT_SPHERE", 
-                "Click on mesh to position 3D cursor!",
+                "SELECT_SPHERE",
+                "Position the 3D cursor near the molecular mesh!",
                 operator=self
             )
         return{'FINISHED'}
@@ -635,19 +641,20 @@ class OBJECT_OT_SphereDoneButton(ButtonParentClass):
         # Make sure sphere pruning factor is less than whole pruning.
         if mesh.overall_pruning_stride < obj.sphere_pruning_stride:
             # It isn't, so throw an error.
-            msg = ("Coarse-graining too high (" + 
-                   str(obj.sphere_pruning_stride) + "). Set <= " + 
+            msg = ("Coarse-graining too high (" +
+                   str(obj.sphere_pruning_stride) + "). Set <= " +
                    str(mesh.overall_pruning_stride) + ".")
             Messages.send_message(
                 "SPHERE_STRIDE_TOO_HIGH", msg, operator=self
             )
         else:
             # It is, so switch back to the mesh.
-            for obj in bpy.data.objects: obj.select = False
+            for obj in bpy.data.objects:
+                obj.select_set(state=False)
 
-            bpy.context.scene.objects.active = mesh
-            bpy.context.scene.objects.active.select = True
-        
+            bpy.context.view_layer.objects.active = mesh
+            bpy.context.active_object.select_set(state=True)
+
         return{'FINISHED'}
 
 
@@ -655,7 +662,7 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
     """
     Delete this high-detail region.
     """
-    
+
     bl_idname = "pyrite.delete_region"
     bl_label = "Delete Region"
 
@@ -672,13 +679,14 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
         mesh = bpy.data.objects[mesh_name]
 
         # Delete the sphere.
-        for o in bpy.data.objects: o.select = False
-        obj.select = True
-        bpy.ops.object.delete() 
+        for o in bpy.data.objects:
+            o.select_set(state=False)
+        obj.select_set(state=True)
+        bpy.ops.object.delete()
 
         # Switch back to the mesh.
-        bpy.context.scene.objects.active = mesh
-        bpy.context.scene.objects.active.select = True
+        bpy.context.view_layer.objects.active = mesh
+        bpy.context.active_object.select_set(state=True)
 
         return{'FINISHED'}
 
@@ -686,7 +694,7 @@ class OBJECT_OT_DeleteSphereButton(ButtonParentClass):
 class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
     """
     Select and edit an existing sphere. This is a parent all other
-    select-sphere buttons inherit. 
+    select-sphere buttons inherit.
     """
 
     bl_idname = ""
@@ -698,18 +706,19 @@ class OBJECT_OT_SelectExistingSphereButtonParent(ButtonParentClass):
 
         :param int index: The index of the sphere.
         """
-        
+
         # Get the sphere
         spheres = [
-            obj for obj in bpy.data.objects 
+            obj for obj in bpy.data.objects
             if obj.name.startswith("Prt_sph_pyrt_")
         ]
         sphere = spheres[index]
 
         # Make that sphere selected and active.
-        for obj in bpy.data.objects: obj.select = False
-        bpy.context.scene.objects.active = bpy.data.objects[sphere.name]
-        bpy.context.scene.objects.active.select = True
+        for obj in bpy.data.objects:
+            obj.select_set(state=False)
+        bpy.context.view_layer.objects.active = bpy.data.objects[sphere.name]
+        bpy.context.active_object.select_set(state=True)
 
 
 class OBJECT_OT_SelectExistingSphereButton0(
@@ -720,6 +729,7 @@ class OBJECT_OT_SelectExistingSphereButton0(
     """
 
     bl_idname = "pyrite.select_sphere0"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -739,6 +749,7 @@ class OBJECT_OT_SelectExistingSphereButton1(
     """
 
     bl_idname = "pyrite.select_sphere1"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -758,6 +769,7 @@ class OBJECT_OT_SelectExistingSphereButton2(
     """
 
     bl_idname = "pyrite.select_sphere2"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -777,6 +789,7 @@ class OBJECT_OT_SelectExistingSphereButton3(
     """
 
     bl_idname = "pyrite.select_sphere3"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -796,6 +809,7 @@ class OBJECT_OT_SelectExistingSphereButton4(
     """
 
     bl_idname = "pyrite.select_sphere4"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -815,6 +829,7 @@ class OBJECT_OT_SelectExistingSphereButton5(
     """
 
     bl_idname = "pyrite.select_sphere5"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -834,6 +849,7 @@ class OBJECT_OT_SelectExistingSphereButton6(
     """
 
     bl_idname = "pyrite.select_sphere6"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -853,6 +869,7 @@ class OBJECT_OT_SelectExistingSphereButton7(
     """
 
     bl_idname = "pyrite.select_sphere7"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -872,6 +889,7 @@ class OBJECT_OT_SelectExistingSphereButton8(
     """
 
     bl_idname = "pyrite.select_sphere8"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -891,6 +909,7 @@ class OBJECT_OT_SelectExistingSphereButton9(
     """
 
     bl_idname = "pyrite.select_sphere9"
+
     def execute(self, context):
         """
         Runs when button pressed.
@@ -921,7 +940,7 @@ class OBJECT_OT_StartOver(ButtonParentClass):
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
             if obj.name.startswith("Pyrite_"):
-                obj.select = True
+                obj.select_set(state=True)
                 bpy.ops.object.delete()
 
         return{'FINISHED'}
@@ -948,10 +967,10 @@ class OBJECT_OT_RemoveAnimations(ButtonParentClass):
         bpy.ops.object.select_all(action='DESELECT')
         for obj in bpy.data.objects:
             if (
-                obj.name.startswith("Pyrite_") and 
+                obj.name.startswith("Pyrite_") and
                 not obj.name.startswith("Prt_sph_pyrt_")
             ):
-                obj.select = True
+                obj.select_set(state=True)
                 bpy.ops.object.delete()
 
         return{'FINISHED'}
@@ -976,27 +995,30 @@ class OBJECT_OT_DefaultLocRotScaleButton(ButtonParentClass):
 
         # So dumb that blender throws an error if it's already in object
         # mode...
-        try: bpy.ops.object.mode_set(mode='OBJECT')
-        except: pass
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
 
         # Set the object's location.
-        bpy.context.scene.objects.active.location.x = 0.0
-        bpy.context.scene.objects.active.location.y = 0.0
-        bpy.context.scene.objects.active.location.z = 0.0
+        bpy.context.active_object.location.x = 0.0
+        bpy.context.active_object.location.y = 0.0
+        bpy.context.active_object.location.z = 0.0
 
         # Set the object's rotation.
-        bpy.context.scene.objects.active.rotation_euler.x = 0.0
-        bpy.context.scene.objects.active.rotation_euler.y = 0.0
-        bpy.context.scene.objects.active.rotation_euler.z = 0.0
+        bpy.context.active_object.rotation_euler.x = 0.0
+        bpy.context.active_object.rotation_euler.y = 0.0
+        bpy.context.active_object.rotation_euler.z = 0.0
 
         # Set the object's scale.
-        bpy.context.scene.objects.active.scale.x = 1.0
-        bpy.context.scene.objects.active.scale.y = 1.0
-        bpy.context.scene.objects.active.scale.z = 1.0
-        
+        bpy.context.active_object.scale.x = 1.0
+        bpy.context.active_object.scale.y = 1.0
+        bpy.context.active_object.scale.z = 1.0
+
         # Zoom in on the object.
-        for obj in bpy.data.objects: obj.select = False
-        bpy.context.scene.objects.active.select = True
+        for obj in bpy.data.objects:
+            obj.select_set(state=False)
+        bpy.context.active_object.select_set(state=True)
         bpy.ops.view3d.view_selected(use_all_regions=False)
 
         return{'FINISHED'}
@@ -1021,13 +1043,16 @@ class OBJECT_OT_MainMenuButton(ButtonParentClass):
 
         # So dumb that blender throws an error if it's already in object
         # mode...
-        try: bpy.ops.object.mode_set(mode='OBJECT')
-        except: pass
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except:
+            pass
 
         for obj in bpy.data.objects:
-            obj.select = False
-        
+            obj.select_set(state=False)
+
         return {'FINISHED'}
+
 
 # Store keymaps here to access after registration.
 addon_keymaps = []
@@ -1055,6 +1080,8 @@ classes_used = [
 ]
 
 ##### Registration functions #####
+
+
 def register():
     """
     Registers this addon.
@@ -1067,6 +1094,7 @@ def register():
     for c in classes_used:
         bpy.utils.register_class(c)
 
+
 def unregister():
     """
     Good practice to make it possible to unregister addons.
@@ -1078,6 +1106,7 @@ def unregister():
     global classes_used
     for c in classes_used:
         bpy.utils.unregister_class(c)
+
 
 if __name__ == "__main__":
     """

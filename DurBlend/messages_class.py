@@ -17,6 +17,7 @@
 import bpy
 import time
 
+
 class MessagesClass():
     """
     A class for displaying messages in UI panels. Good for error messages, for
@@ -29,7 +30,7 @@ class MessagesClass():
         """
         Overwritten by children.
         """
-        
+
         pass
 
     def send_message(self, id, msg, duration=5.0, operator=None, msg_otherwise=""):
@@ -56,7 +57,7 @@ class MessagesClass():
         if operator is not None:
             operator.report({"ERROR"}, msg)
 
-    def display_message(self, id, panel):  
+    def display_message(self, id, panel):
         """
         Display a message.
 
