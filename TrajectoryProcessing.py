@@ -1,4 +1,4 @@
-# Pyrite 1.1.0 is a Blender addon for visualization molecular dynamics
+# Pyrite 1.1.1 is a Blender addon for visualization molecular dynamics
 # simulations. Copyright (C) 2018  Jacob D. Durrant
 #
 # This program is free software: you can redistribute it and/or modify it
@@ -283,9 +283,6 @@ class ProcessTrajectory(BackgroundJobParentClass):
         except:
             pass
 
-        # Sets next frame to add
-        bpy.context.scene.frame_set(self.frame_index)
-
         if self.frame_index == 0 or position_all == True:
             # Set all of them.
             sel = self.selection_atoms_to_keep
@@ -295,8 +292,21 @@ class ProcessTrajectory(BackgroundJobParentClass):
                 self.frame_index % self.frame_stride
             ]
 
+        # Get all the coordinates.
+        coors = self.current_frame.get_coordinates()
+
+        # If the coordinates are empty, skip. This happens with some
+        # multi-frame PDB files that end in:
+        # ENDMDL
+        # END
+        if len(coors) == 0:
+            return
+
         # Get the coordinates of the appropriate atoms.
-        coors = self.current_frame.get_coordinates()[sel]
+        coors = coors[sel]
+
+        # Sets next frame to add
+        bpy.context.scene.frame_set(self.frame_index)
 
         # Go through and set the appropriate empty object to the associated
         # coordinate.

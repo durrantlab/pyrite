@@ -1,4 +1,4 @@
-# Pyrite 1.1.0
+# Pyrite 1.1.1
 
 ## Description
 
